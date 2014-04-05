@@ -1,5 +1,5 @@
 var $ = window.$;
-var main = require('main');
+var main = require('../js/main.js');
 //External functions
 var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, sortReverse, sortTypeId, randomSort, randomSeed, skip, max, callback) {
 
