@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
+
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/bootstrap.min.js"></script>
+
+        <!-- Modules -->
+        <script>
+            var main = require('main');
+        </script>
+    </head>
+
+    <body onclick="main.reloadInstance();">
+        <div id="wrapper">
+            <div id="top-bar">
+                <div class="top-titlebar-text">Flixtor</div>
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+            </div>
+            <div id="content-wrapper">
+                <div id="side-bar-full" class="hidden-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
+                        </li>
+                        <li id="side-bar-li-series" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
+                        </li>
+                        <li id="side-bar-li-torrents" class="on" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
+                        </li>
+                        <li id="side-bar-li-cast" class="on" onclick="main.changeFrame('cast')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Cast</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="side-bar-small" class="visible-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies-sm" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-series-sm" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-torrents-sm" class="on" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-cast" class="on" onclick="main.changeFrame('cast')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;C</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="popup"></div>
+                <div id="content">
+                    <div class="p-10">
+                        <script>
+                            var os = require('os');
+                            var ifaces = os.networkInterfaces();
+
+                            var myip = '';
+
+                            for(var key in ifaces){
+                                var iface = ifaces[key];
+                                iface.forEach(function(details){
+                                    console.log(details);
+                                    if(details.family === 'IPv4' && !details.internal){
+                                        myip = details.address;
+                                    }
+                                });
+                            }
+
+                            var webSocket = require('ws');
+                            var rest = require('rest');
+                            var mime = require('rest/interceptor/mime');
+                            var url = require('url');
+                            var parseString = require('xml2js').parseString;
+                            var SSDP = require('node-ssdp');
+                            var client = new SSDP();
+
+                            console.log(chrome);
+
+                            client.on('notify', function () {
+                                console.log('Got a notification.');
+                            });
+
+                            client.on('response', function inResponse(msg, rinfo) {
+                                var data = parseCastData(msg);
+                                console.log(msg);
+                                console.log(rinfo);
+
+                                rest({
+                                    path: data.LOCATION,
+                                    headers: {
+                                        'Host': url.parse(data.LOCATION).host
+                                    }
+                                }).then(function(res) {
+                                    console.log("First response");
+                                    console.log(res);
+
+                                    //Setting up application resources
+                                    var applicationUrl = res.headers['Application-Url'];
+                                    var applicationResourceUrl = applicationUrl + 'ChromeCast';
+
+                                    console.log(applicationUrl);
+
+                                    //Sending initialization
+                                    rest.chain(mime, { mime: 'application/x-www-form-urlencoded.js' })({
+                                        path: applicationResourceUrl,
+                                        method: 'POST',
+                                        headers: {
+                                            'Host': url.parse(data.LOCATION).host
+                                        },
+                                        entity: {
+                                            v: 'release-9e8c585405ea9a5cecd82885e8e35d28a16609c6',
+                                            id: 'local:3',
+                                            idle: 'windowclose'
+                                        }
+                                    }).then(function(res2){
+                                        console.log("Second response");
+                                        console.log(res2);
+
+                                        //Waiting for response
+                                        var inter = setInterval(function(){
+                                            rest({
+                                                path: applicationResourceUrl,
+                                                headers: {
+                                                    'Host': url.parse(data.LOCATION).host
+                                                }
+                                            }).then(function(res3){
+                                                clearInterval(inter);
+                                                console.log("Third response");
+                                                console.log(res3);
+
+                                                parseString(res3.entity, function (err, result) {
+                                                    console.log(result);
+                                                    var connectionUrl = result.service.servicedata[0].connectionSvcURL[0];
+                                                    console.log("URL: " + connectionUrl);
+
+                                                    //Sending new info to connectionUrl
+                                                    rest.chain(mime, { mime: 'application/json' })({
+                                                        path: connectionUrl,
+                                                        headers: {
+                                                            'Host': url.parse(data.LOCATION).host
+                                                        },
+                                                        entity: {
+                                                            channel: 0
+                                                        }
+                                                    }).then(function(res4){
+                                                        console.log("Fourth response");
+                                                        console.log(res4);
+
+                                                        //Retreiving new session url
+                                                        console.log("URL: " + res4.entity.URL);
+
+                                                        //Sending the motherfucking video
+                                                        var socket = new webSocket(res4.entity.URL, { origin: 'chrome-extension://boadgeojelhgndaghljhdicfkmllpafd' });
+                                                        socket.on('open', function(){
+                                                            console.log("Socket opened");
+                                                            socket.send('["cv",{"type":"launch_service","message":{"action":"launch","activityType":"mirror_tab","activityId":"l8z8p96u4yjy","initParams":{"tab_id":-2,"settings":{"videoBitrate":2500,"minVideoBitrate":2000,"maxVideoBitrate":2500,"videoQuality":56,"minWidth":1280,"minHeight":720,"audioBitrate":128,"useOpus":true,"bufferedMode":"on","bufferSizeMillis":500,"maxFrameRate":30,"enablePacing":true,"enableAudioTcp":false,"enableVideoTcp":false,"enableAudioNack":true,"captureSurface":"desktop","lowFpsMode":false,"zoomModeEnabled":true,"preferredVideoCodec":"CAST1"}},"senderId":"sender-qfmvlvl07k01","receiverId":"local:1","disconnectPolicy":"stop"}}]');
+
+
+                                                        });
+
+                                                        socket.on('message', function(data, flags){
+                                                            console.log(data + " - ", typeof data);
+                                                            console.log(flags);
+                                                            var pong = JSON.stringify(["cm",{"type":"pong"}]);
+                                                            console.log(pong);
+                                                            socket.send(pong);
+                                                        });
+
+
+                                                    });
+                                                });
+                                            });
+                                        }, 1000);
+                                    });
+                                });
+                            });
+
+                            //Search for the fucking device
+                            client.search('urn:dial-multiscreen-org:service:dial:1');
+
+                            //Parse data sended by the device
+                            function parseCastData(data)
+                            {
+                                data = data.toString('utf-8');
+                                var out = [];
+                                data.split(/\r\n|\n|\r/).forEach(function(line, idx){
+                                    if(idx === 0){
+                                        return;
+                                    }
+                                    var a = line.split(/:/);
+                                    var key = a.shift();
+                                    var val = a.join(':');
+
+                                    if(key && val){
+                                        out[key] = val.trim();
+                                    }
+                                });
+
+                                return out;
+                            }
+
+                            //Create wrapper msg to send to the device (It's like a remote control)
+                            function createSenderData(link, pause, muted)
+                            {
+                                return JSON.stringify(["cv",{"type":"launch_service","message":{"action":"launch","activityType":"video_playback","activityId":"g9rh2radmgcw","initParams":{
+                                    videoUrl: link,
+                                    currentTime: 0,
+                                    duration: 0,
+                                    paused: pause, //request play
+                                    muted: muted,
+                                    volume: 0.8},"senderId":"s16qkwo9ks2x","receiverId":"local:7","disconnectPolicy":"stop"}}]);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+
+    <!--    ["cv",{"type":"launch_service","message":{"action":"launch_succeeded","activityType":"mirror_tab","activityId":"hpdaoi6cw7rw","initParams":{"tab_id":436,"settings":{"videoBitrate":2500,"minVideoBitrate":2000,"maxVideoBitrate":2500,"videoQuality":56,"minWidth":1280,"minHeight":720,"audioBitrate":128,"useOpus":true,"bufferedMode":"on","bufferSizeMillis":500,"maxFrameRate":30,"enablePacing":true,"enableAudioTcp":false,"enableVideoTcp":false,"enableAudioNack":true,"captureSurface":"tab","lowFpsMode":false,"zoomModeEnabled":true,"preferredVideoCodec":"CAST1"}},"senderId":"sender-1bi7kxxmltw3","receiverId":"local:1","disconnectPolicy":"stop"}}]
+
+
+["cv",{"type":"launch_service","message":{"action":"launch","activityType":"mirror_tab","activityId":"hpdaoi6cw7rw","initParams":{"tab_id":436,"settings":{"videoBitrate":2500,"minVideoBitrate":2000,"maxVideoBitrate":2500,"videoQuality":56,"minWidth":1280,"minHeight":720,"audioBitrate":128,"useOpus":true,"bufferedMode":"on","bufferSizeMillis":500,"maxFrameRate":30,"enablePacing":true,"enableAudioTcp":false,"enableVideoTcp":false,"enableAudioNack":true,"captureSurface":"tab","lowFpsMode":false,"zoomModeEnabled":true,"preferredVideoCodec":"CAST1"}},"senderId":"sender-1bi7kxxmltw3","receiverId":"local:1","disconnectPolicy":"stop"}}]
+
+["cv",{"type":"activity","message":{"type":"update_description","vg":false,"defaultPrevented":false,"qB":true,"activityId":"hpdaoi6cw7rw","description":"127.0.0.1 (Tab)","iconUrl":null}}]
+
+["ramp",{"cmd_id":1000,"type":"INFO"}]
+
+["ramp",{"cmd_id":1000,"type":"RESPONSE","status":{"event_sequence":1,"state":2,"time_progress":true,"current_time":0,"volume":1,"muted":false,"has_pause":false}}]
+
+["cv",{"type":"activity","message":{"type":"webrtc","vg":false,"defaultPrevented":false,"qB":true,"activityId":"hpdaoi6cw7rw","message":"{\"sdp\":\"v=0\\r\\no=- 3134667117278012381 2 IN IP4 127.0.0.1\\r\\ns=-\\r\\nt=0 0\\r\\na=msid-semantic: WMS 81rNx2UM2sJwVlmhAdekPtc8OXKmqTqvgymG\\r\\nm=audio 1 RTP/SAVPF 111\\r\\nc=IN IP4 0.0.0.0\\r\\na=rtcp:1 IN IP4 0.0.0.0\\r\\na=ice-ufrag:EaOmGqaaZbaT7we7\\r\\na=ice-pwd:Rbd0zUd730SI5C3alGGgF4/H\\r\\na=ice-options:google-ice\\r\\na=fingerprint:sha-256 E9:23:37:84:92:4A:6C:5C:CC:5D:6F:A7:B4:05:F7:BD:FA:79:F8:4A:BF:01:48:E1:39:1D:93:D3:14:E8:34:AE\\r\\na=setup:actpass\\r\\na=mid:audio\\r\\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\\r\\na=sendrecv\\r\\na=rtcp-mux\\r\\na=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:VLm9CgG69+MjGRKcpPqhmTJQsDO7pUKw+i+VWmLK\\r\\na=rtpmap:111 opus/48000/2\\r\\na=fmtp:111 minptime=10; sprop-stereo=1\\r\\na=rtcp-fb:111 nack\\r\\na=maxptime:60\\r\\na=ssrc:1092593160 cname:djLDPwnS3T5uh4/S\\r\\na=ssrc:1092593160 msid:81rNx2UM2sJwVlmhAdekPtc8OXKmqTqvgymG 015553b1-5593-4a39-bb18-f7e16b8fb832\\r\\na=ssrc:1092593160 mslabel:81rNx2UM2sJwVlmhAdekPtc8OXKmqTqvgymG\\r\\na=ssrc:1092593160 label:015553b1-5593-4a39-bb18-f7e16b8fb832\\r\\nm=video 1 RTP/SAVPF 100\\r\\nc=IN IP4 0.0.0.0\\r\\na=rtcp:1 IN IP4 0.0.0.0\\r\\na=ice-ufrag:EaOmGqaaZbaT7we7\\r\\na=ice-pwd:Rbd0zUd730SI5C3alGGgF4/H\\r\\na=ice-options:google-ice\\r\\na=fingerprint:sha-256 E9:23:37:84:92:4A:6C:5C:CC:5D:6F:A7:B4:05:F7:BD:FA:79:F8:4A:BF:01:48:E1:39:1D:93:D3:14:E8:34:AE\\r\\na=setup:actpass\\r\\na=mid:video\\r\\na=extmap:2 urn:ietf:params:rtp-hdrext:toffset\\r\\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\\r\\na=sendrecv\\r\\na=rtcp-mux\\r\\na=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:VLm9CgG69+MjGRKcpPqhmTJQsDO7pUKw+i+VWmLK\\r\\na=rtpmap:100 VP8/90000\\r\\na=rtcp-fb:100 ccm fir\\r\\na=rtcp-fb:100 nack\\r\\na=rtcp-fb:100 goog-remb\\r\\na=ssrc:146835733 cname:djLDPwnS3T5uh4/S\\r\\na=ssrc:146835733 msid:81rNx2UM2sJwVlmhAdekPtc8OXKmqTqvgymG dc4d117d-8f23-465a-b4c7-a68655c0a352\\r\\na=ssrc:146835733 mslabel:81rNx2UM2sJwVlmhAdekPtc8OXKmqTqvgymG\\r\\na=ssrc:146835733 label:dc4d117d-8f23-465a-b4c7-a68655c0a352\\r\\n\",\"type\":\"offer\"}"}}]
+
+["cv",{"type":"activity","message":{"type":"webrtc","va":false,"defaultPrevented":false,"Td":true,"activityId":"hpdaoi6cw7rw","message":"{\"sdp\":\"v=0\\r\\no=- 3042810242394376523 2 IN IP4 127.0.0.1\\r\\ns=-\\r\\nt=0 0\\r\\na=msid-semantic: WMS\\r\\nm=audio 1 RTP/SAVPF 111\\r\\nb=AS:128\\r\\nc=IN IP4 0.0.0.0\\r\\na=rtcp:1 IN IP4 0.0.0.0\\r\\na=ice-ufrag:+aCBTEpYZZ88oNg5\\r\\na=ice-pwd:UOmgAGnTqFhINvQcqwxqjpUx\\r\\na=fingerprint:sha-256 EE:C2:7A:CE:71:3F:74:1A:ED:7C:E3:D2:76:E7:C7:14:01:C7:77:99:5D:D1:D2:DD:70:A8:12:B0:09:7C:F0:A5\\r\\na=setup:active\\r\\na=mid:audio\\r\\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\\r\\na=recvonly\\r\\na=rtcp-mux\\r\\na=rtpmap:111 opus/48000/2\\r\\na=fmtp:111 minptime=10; stereo=1\\r\\na=rtcp-fb:111 nack\\r\\na=maxptime:60\\r\\nm=video 1 RTP/SAVPF 100\\r\\nc=IN IP4 0.0.0.0\\r\\na=rtcp:1 IN IP4 0.0.0.0\\r\\na=ice-ufrag:XtMWISIuoQ21xsTS\\r\\na=ice-pwd:UCr1kXXXiIWoeRG4fDkE9J5O\\r\\na=fingerprint:sha-256 EE:C2:7A:CE:71:3F:74:1A:ED:7C:E3:D2:76:E7:C7:14:01:C7:77:99:5D:D1:D2:DD:70:A8:12:B0:09:7C:F0:A5\\r\\na=setup:active\\r\\na=mid:video\\r\\na=extmap:2 urn:ietf:params:rtp-hdrext:toffset\\r\\na=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\\r\\na=recvonly\\r\\na=rtcp-mux\\r\\na=rtpmap:100 VP8/90000\\r\\na=x-google-buffer-latency:600\\r\\na=fmtp:100 x-google-min-bitrate=2000; x-google-max-bitrate=2500; x-google-max-quantization=56\\r\\na=rtcp-fb:100 ccm fir\\r\\na=rtcp-fb:100 nack\\r\\na=rtcp-fb:100 goog-remb\\r\\n\",\"type\":\"answer\"}"}}]
+
+["cv",{"type":"activity","message":{"type":"webrtc","va":false,"defaultPrevented":false,"Td":true,"activityId":"hpdaoi6cw7rw","message":"{\"type\":\"candidate\",\"label\":0,\"id\":\"audio\",\"candidate\":\"a=candidate:1876262918 1 udp 2113937151 192.168.0.29 41471 typ host generation 0\\r\\n\"}"}}]
+
+["cv",{"type":"activity","message":{"type":"webrtc","vg":false,"defaultPrevented":false,"qB":true,"activityId":"hpdaoi6cw7rw","message":"{\"type\":\"candidate\",\"label\":1,\"id\":\"video\",\"candidate\":\"a=candidate:4135066038 1 udp 1845501695 198.48.206.42 63206 typ srflx raddr 192.168.0.23 rport 50622 generation 0\\r\\n\"}"}}]
+
+["cv",{"type":"activity_service","message":{"type":"remove_activity","vg":false,"defaultPrevented":false,"qB":true,"activityId":"u89zjugcxfk3"}}]
+-->

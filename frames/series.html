@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Flixtor</title>
+    <!-- CSS -->
+    <link href="../styles/bootstrap.min.css" rel="stylesheet">
+    <link href="../styles/bootly.css" rel="stylesheet">
+
+    <!-- Scripts -->
+    <script type='text/javascript' src="../js/jquery.min.js"></script>
+    <script type='text/javascript' src="../js/bootstrap.min.js"></script>
+    <script src="../js/jquery.isotope.min.js"></script>
+
+    <!-- Modules -->
+    <script>
+        var main = require('main');
+        var callwcf = require('callwcf');
+        main.reloadInstance();
+        callwcf.reloadInstance();
+        $(document).ready(function() {
+            //Scroll bar
+            $(window).resize(function() {
+                console.log($("#serieContainer").height());
+                $("#serieContainer").css('max-height', ($(window).height() - 95) + "px");
+            });
+
+            $(window).resize();
+
+            //Search key press (enter)
+            $('#txtSerieSearch').keypress(function(e) {
+                if (e.keyCode == 13)
+                    $('#btnSearchSerie').click();
+            });
+
+            //Populate genre on page load
+            callwcf.getGenres('ddmGenres');
+        });
+    </script>
+
+    <!-- Custom page style -->
+    <style>
+        body {
+            background-color: #141414;
+        }
+        .shadow {
+            display: block;
+            position: relative;
+        }
+        .shadow img {
+            display: block;
+        }
+        .shadow:hover::before {
+            box-shadow: none;
+        }
+        .shadow::before {
+            display: block;
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 100%;
+            box-shadow: inset 0px 0px 50px 1px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="top-bar">
+            <div class="top-titlebar-text">Flixtor</div>
+            <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                <span class="glyphicon glyphicon-minus"></span>
+            </div>
+            <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                <span class="glyphicon glyphicon-fullscreen"></span>
+            </div>
+            <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                <span class="glyphicon glyphicon-remove"></span>
+            </div>
+        </div>
+        <div id="content-wrapper">
+            <div id="side-bar-full" class="hidden-xs side-bar">
+                <ul>
+                    <li id="side-bar-li-movies" onclick="main.changeFrame('movies')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
+                    </li>
+                    <li id="side-bar-li-series" class="on" onclick="main.changeFrame('series')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
+                    </li>
+                    <li id="side-bar-li-torrents" onclick="main.changeFrame('torrents')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
+                    </li>
+                </ul>
+            </div>
+            <div id="side-bar-small" class="visible-xs side-bar">
+                <ul>
+                    <li id="side-bar-li-movies-sm" onclick="main.changeFrame('movies')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-film"></span>
+                        </a>
+                    </li>
+                    <li id="side-bar-li-series-sm" class="on" onclick="main.changeFrame('series')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-expand"></span>
+                        </a>
+                    </li>
+                    <li id="side-bar-li-torrents-sm" onclick="main.changeFrame('torrents')">
+                        <a href="#">
+                            <span class="glyphicon glyphicon-th-list"></span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div id="content">
+                <script>
+                    var serieSearchValue, serieFilterCategory, serieFilterGenre, serieColumnName, serieSortReverse, serieSortTypeId, serieRandomSort, serieRandomSeed, serieSkip, serieMax;
+
+                    $(document).ready(function() {
+                        $("#txtSerieSearch").val(serieSearchValue);
+
+                        if (serieFilterGenre) {
+                            changeFilterGenre(serieFilterGenre.replace("+Genres:", "").replace("*", ""));
+                        } else {
+                            $("#filterByGenre").text(": Any");
+                        }
+
+                        if (serieFilterCategory) {
+                            changeFilterCategory(serieFilterCategory);
+                        } else {
+                            changeFilterCategory("Most downloaded");
+                        }
+                    });
+
+
+
+                    function serieApplySearch(loadMore) {
+                        $("#wrapper").append("<div class='spinner-overlay'></div>");
+                        if (!serieSkip) {
+                            serieSkip = 0;
+                        }
+
+                        if (!serieMax) {
+                            serieMax = 75;
+                        }
+
+
+                        callwcf.searchTable("Series", "Name", serieSearchValue, serieFilterGenre, serieColumnName, serieSortReverse, serieSortTypeId, serieRandomSort, serieRandomSeed, serieSkip, serieMax, function(results) {
+                            var content = "";
+                            $(results.Series).each(function(index) {
+                                var serie = $(this)[0];
+                                var posterPath = ""
+                                if (serie.PosterPath == "") {
+                                    posterPath = "../images/no-poster.png";
+                                } else {
+                                    posterPath = "http://image.tmdb.org/t/p/w185" + serie.PosterPath;
+                                }
+                                content += "<div class='element transition m-10 isotope-item' style='-webkit-box-shadow: 0 8px 6px -6px black; position:relative; border:thin solid black;'>" +
+                                    "<a class='shadow' onClick='showDetails(" + serie.SerieId + ")'>" +
+                                    "<img alt='image' src='" + posterPath + "' style='width:160px; height:230px;'/>" +
+                                    "</a>" +
+                                    "<div style='position:absolute; top:175px; background:rgba(0,0,0,0.8); border-top:thin solid black; width:100%; padding:5px;color:white'>" +
+                                    "<div style='font-size:14px;'>" + serie.Name + "</div>" +
+                                    "<div style='font-size:10px; color:#E8E8E8;'>" + serie.Genres + "</div>" +
+                                    "</div>" +
+                                    "<div style='clear:both'></div>" +
+                                    "</div>";
+                            });
+                            $(".spinner-overlay").remove();
+                            $("#serieContainer").empty();
+                            if (content != "") {
+                                $('#serieContainer').append(content);
+                                var $container = $("#serieContainer");
+                                $container.isotope('destroy');
+                                $container.isotope({
+                                    itemSelector: ".element",
+                                    animationEngine: "jquery"
+                                });
+                            } else {
+                                content = "<span class='p-10 ml-20 font-24' style='color:#D5D5D5;'>No results found</span>"
+                                $('#serieContainer').append(content);
+                            }
+
+                        });
+
+                    }
+
+                    function changeSearchText() {
+                        serieSearchValue = $("#txtSerieSearch").val();
+                        serieApplySearch(false);
+                    }
+
+                    function startTorrent(infoHash) {
+                        main.playTorrent(infoHash, 'series');
+                    }
+
+                    function changeFilterGenre(name) {
+                        if (name != "Any" && serieFilterGenre != name) {
+                            serieFilterGenre = callwcf.parseSearch("Genres", name);
+
+                        } else if (name == "Any" && serieFilterGenre != name) {
+                            serieFilterGenre = "";
+                        }
+                        $("#filterByGenre").text(": " + name);
+
+                        serieApplySearch(false);
+                    }
+
+                    function changeFilterCategory(name) {
+                        serieFilterCategory = name;
+                        $("#filterByCategory").text(" by " + name);
+
+                        switch (serieFilterCategory) {
+                            case "Most downloaded":
+                                serieColumnName = "Seeds";
+                                serieSortReverse = true;
+                                serieSortTypeId = 4;
+                                serieRandomSort = false;
+                                serieRandomSeed = 0;
+                                break;
+                            case "New released":
+                                serieColumnName = "FirstAirDateTicks";
+                                serieSortReverse = true;
+                                serieSortTypeId = 6;
+                                serieRandomSort = false;
+                                serieRandomSeed = 0;
+                                break;
+                            case "Popular":
+                                serieColumnName = "Popularity";
+                                serieSortReverse = true;
+                                serieSortTypeId = 7;
+                                serieRandomSort = false;
+                                serieRandomSeed = 0;
+                                break;
+                            case "Random":
+                                serieColumnName = "";
+                                serieSortReverse = false;
+                                serieSortTypeId = -1;
+                                serieRandomSort = true;
+                                serieRandomSeed = Math.floor((Math.random() * 1000) + 1);
+                                break;
+                        }
+                        serieApplySearch(false);
+                    }
+
+                    function showDetails(serieId) {
+                        $('#serieContainer').append("<div class='spinner-overlay'></div>");
+                        $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Series(" + serieId + ")?$format=json&$expand=Genres", function(data) {
+                            var serie = data.d;
+                            var posterPath = ""
+                            if (serie.PosterPath == null) {
+                                posterPath = "../images/no-poster.png";
+                            } else {
+                                posterPath = "http://image.tmdb.org/t/p/w185" + serie.PosterPath;
+                            }
+                            $("#sdTitle").text(serie.Name);
+                            $("#sdBigTitle").text(serie.Name);
+                            $("#sdPoster").attr("src", posterPath);
+                            $("#sdBackdrop").attr("src", "http://image.tmdb.org/t/p/original/" + serie.BackdropPath);
+                            $("#sdOverview").text(serie.Overview);
+
+                            $("#sdGenres").empty();
+                            $.each(serie.Genres.results, function(index, value) {
+                                $("#sdGenres").append(value.Name + " ");
+                            });
+
+                            $("#hSerieId").val(serieId);
+                            $("#divSD").removeClass("hide");
+                            $("#serieDetailsModal").removeClass("hide");
+                            $("#serieEpisodesModal").addClass("hide");
+                            $(".spinner-overlay").remove();
+                        });
+
+                    }
+
+                    function viewEpisodes(serieId) {
+                        $("#sdeTitle").text($("#sdTitle").text());
+                        $("#episodeContainer").empty();
+                        $("#episodeContainer").append("<div class='spinner-overlay'></div>");
+                        callwcf.getSimpleTopSerieTorrents(serieId, function(results) {
+                            $("#episodeContainer").empty();
+                            $(results).each(function(serieTorrent) {
+                                var episodeTorrent = $(this)[0];
+                                $("#episodeContainer").append("<tr>" +
+                                    "<td>" + episodeTorrent.Episode.Name + "</td>" +
+                                    "<td>" + episodeTorrent.Episode.EpisodeNumber + "</td>" +
+                                    "<td>" + episodeTorrent.Episode.SeasonNumber + "</td>" +
+                                    "<td>" +
+                                    "<button class='btn btn-xs btn-success' onclick='$(\"#divSD\").addClass(\"hide\");startTorrent(\"" + episodeTorrent.Torrent.InfoHash + "\");' title='Play the torrent with the most seeds'>" +
+                                    "<i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button></td></tr>");
+
+                            });
+                        });
+                        $("#hSerieId").val(serieId);
+                        $("#divSD").removeClass("hide");
+                        $("#serieDetailsModal").addClass("hide");
+                        $("#serieEpisodesModal").removeClass("hide");
+                    }
+                </script>
+
+
+                <div class="p-10">
+                    <div class="row" style="margin-right:0;">
+                        <div class="col-lg-10">
+                            <div class="input-group">
+                                <input id="txtSerieSearch" type="text" class="form-control black-input" placeholder="Serie title...">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" id="btnSearchSerie" onclick="changeSearchText();">Search</button>
+                                    <span class="ml-10">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Genre
+                                            <span id="filterByGenre"></span>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu" style="Max-height:400px;overflow-y:auto;" role="menu" id="ddmGenres">
+                                            <li>
+                                                <a onclick="changeFilterGenre('Any');">Any</a>
+                                            </li>
+                                        </ul>
+                                    </span>
+                                    <span class="ml-10">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter
+                                            <span id="filterByCategory"></span>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu pull-right" role="menu" id="ddmFilter">
+                                            <li>
+                                                <a onclick="changeFilterCategory('Most downloaded')">Most downloaded</a>
+                                            </li>
+                                            <li>
+                                                <a onclick="changeFilterCategory('New released')">New released</a>
+                                            </li>
+                                            <li>
+                                                <a onclick="changeFilterCategory('Popular')">Popular</a>
+                                            </li>
+                                            <li>
+                                                <a onclick="changeFilterCategory('Random')">Random</a>
+                                            </li>
+                                        </ul>
+                                    </span>
+                                </span>
+
+                            </div>
+                            <!-- /input-group -->
+                        </div>
+                        <!-- /.col-lg-6 -->
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+
+                <div id="serieContainer" class="isotope" style="overflow-y:auto !important;  margin-right:10px;">
+                    <!-- Dynamic content here -->
+                </div>
+                <div id="popup"></div>
+                <div id="divSD" class="hide">
+                    <input type="hidden" id="hSerieId" />
+                    <div id="serieModal" class="modal fade in show">
+                        <div id="serieDetailsModal" class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" onclick="$('#divSD').addClass('hide');">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </button>
+                                    <span>Details of</span>
+                                    <span id="sdTitle"></span>
+                                </div>
+                                <div style="max-height:550px;overflow:auto !important;">
+
+                                    <div style="height: 200px; overflow: hidden; border-bottom: thin solid #b9b9b9; float: left; text-align: center;" class="width-100">
+                                        <img id="sdBackdrop" alt="" src="http://image.tmdb.org/t/p/original/35657JZSn1MlRjty9AgmqvpyraY.jpg" class="width-100">
+                                    </div>
+                                    <div style="float: left; margin-top: -125px;" class="ml-20">
+                                        <img id="sdPoster" alt="" src="http://image.tmdb.org/t/p/w150/gLYPbbJSNPGj1wJDpef5d59hyVl.jpg" class="img-box-contour" width="150">
+                                    </div>
+                                    <div class="float-clear"></div>
+                                    <div style="margin-top: -100px;">
+                                        <div style="margin-left: 190px;">
+                                            <div class="pr-10">
+                                                <div class="header">
+                                                    <h1 id="sdBigTitle"></h1>
+                                                </div>
+                                                <div class="p-5">
+                                                    <div id="sdGenres">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-20">
+                                            <button class="btn btn-sm btn-primary" onclick="viewEpisodes($('#hSerieId').val())">View episodes</button>
+                                            <div>
+                                                <h2>Plot</h2>
+                                                <p id="sdOverview" style="line-height: 14px;">
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="serieEpisodesModal" class="modal-dialog hide">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" onclick="$('#divSD').addClass('hide');">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </button>
+                                    <span>Episodes of</span>
+                                    <span id="sdeTitle"></span>
+                                </div>
+                                <div class="p-20" style="max-height:500px;overflow-y:auto !important;">
+                                    <table class="table-normal table-header-left table-align-middle width-100">
+                                        <thead>
+                                            <tr>
+                                                <th>Episode name</th>
+                                                <th>Episode number</th>
+                                                <th>Season number</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="episodeContainer">
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop fade in"></div>
+                </div>
+            </div>
+        </div>
+
+</body>
+
+</html>

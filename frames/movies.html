@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
+
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/bootstrap.min.js"></script>
+        <script src="../js/jquery.isotope.min.js"></script>
+
+        <!-- Modules -->
+        <script>
+            var main = require('main');
+            var callwcf = require('callwcf');
+            main.reloadInstance();
+            callwcf.reloadInstance();
+            $(document).ready(function() {
+                //Scroll bar
+                $(window).resize(function() {
+                    $("#movieContainer").css('max-height', ($(window).height() - 95) + "px");
+                });
+
+                $(window).resize();
+
+                //Search key press (enter)
+                $('#txtMovieSearch').keypress(function(e) {
+                    if (e.keyCode == 13) {
+                        $('#btnSearchMovie').click();
+                    }
+                });
+
+                //Populate genre on page load
+                callwcf.getGenres('ddmGenres');
+            });
+        </script>
+
+        <!-- Custom page style -->
+        <style>
+            body {
+                background-color: #141414;
+            }
+            .shadow {
+                display: block;
+                position: relative;
+            }
+            .shadow img {
+                display: block;
+            }
+            .shadow:hover::before {
+                box-shadow: none;
+            }
+            .shadow::before {
+                display: block;
+                content: '';
+                position: absolute;
+                width: 160px;
+                height: 100%;
+                box-shadow: inset 0px 0px 50px 1px rgba(0, 0, 0, 0.8);
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="top-bar">
+                <div class="top-titlebar-text">Flixtor</div>
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+            </div>
+            <div id="content-wrapper">
+                <div id="side-bar-full" class="hidden-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies" class="on" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
+                        </li>
+                        <li id="side-bar-li-series" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
+                        </li>
+                        <li id="side-bar-li-torrents" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
+                        </li>
+                    </ul>
+
+                </div>
+                <div id="side-bar-small" class="visible-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies-sm" class="on" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-series-sm" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-torrents-sm" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="content">
+                    <script type="text/javascript">
+                        var movieSearchValue, movieFilterCategory, movieFilterGenre, movieColumnName, movieSortReverse, movieSortTypeId, movieRandomSort, movieRandomSeed, movieSkip, movieMax;
+
+                        $(document).ready(function() {
+                            //Search persistance
+                            $('#txtMovieSearch').val(movieSearchValue);
+
+                            if (movieFilterGenre) {
+                                changeFilterGenre(movieFilterGenre.replace("+Genres:", "").replace("*", ""));
+                            } else {
+                                $("#filterByGenre").text(": Any");
+                            }
+
+                            if (movieFilterCategory) {
+                                changeFilterCategory(movieFilterCategory);
+                            } else {
+                                changeFilterCategory("Most downloaded");
+                            }
+                        });
+
+
+                        function applySearch() {
+
+                            $("#wrapper").append("<div class='spinner-overlay'></div>");
+
+                            if (!movieSkip) {
+                                movieSkip = 0;
+                            }
+
+                            if (!movieMax) {
+                                movieMax = 75;
+                            }
+
+
+                            callwcf.searchTable("Movies", "Title", movieSearchValue, movieFilterGenre, movieColumnName, movieSortReverse, movieSortTypeId, movieRandomSort, movieRandomSeed, movieSkip, movieMax, function(results) {
+                                if(results == "error")
+                                {
+                                    $('.spinner-overlay').remove();
+                                    return;
+                                }
+                                var content = "";
+                                $(results.Movies).each(function(index) {
+                                    var movie = $(this)[0];
+
+                                    content += "<div class='element transition m-10 isotope-item' style='-webkit-box-shadow: 0 8px 6px -6px black; position: relative;                      border:thin solid black;'>" +
+                                        "<a class='shadow' onClick='showDetails(" + movie.MovieId + ")'>" +
+                                        "<img alt='image' src='http://image.tmdb.org/t/p/w185" + movie.PosterPath + "/>' style='width:160px; height:230px;'>" +
+                                        "</a>" +
+                                        "<div style='position:absolute; top:10px; width:100%'>" +
+                                        "<button type='button' class='btn btn-xs btn-success pull-right' onClick='playMovieTopTorrent(" + movie.MovieId + ")' style='-webkit-border-radius: 3px 0 0 3px;'>" +
+                                        "<i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button>" +
+                                        "</div>" +
+                                        "<div style='position:absolute; top:175px; background:rgba(0,0,0,0.8); border-top:thin solid black; width:100%; padding:5px;                            color:white'>" +
+                                        "<div style='font-size:14px;'>" + movie.Title + "</div>" +
+                                        "<div style='font-size:10px; color:#E8E8E8;'>" + movie.Genres + "</div>" +
+                                        "</div>" +
+                                        "<div style='clear:both'></div>" +
+                                        "</div>";
+                                });
+                                $('.spinner-overlay').remove();
+                                $('#movieContainer').empty();
+
+                                if (content !== "") {
+                                    $('#movieContainer').append(content);
+                                    var $container = $('#movieContainer');
+                                    $container.isotope('destroy');
+                                    $container.isotope({
+                                        itemSelector: '.element',
+                                        animationEngine: 'jquery'
+                                    });
+                                } else {
+                                    content = "<span class='p-10 ml-20 font-24' style='color:#D5D5D5;'>No results found</span>";
+                                    $('#movieContainer').append(content);
+                                }
+
+                            });
+
+                        }
+
+                        function changeSearchText() {
+                            movieSearchValue = $('#txtMovieSearch').val();
+                            applySearch();
+                        }
+
+                        function changeFilterGenre(name) {
+                            if (name != "Any" && movieFilterGenre != name) {
+                                movieFilterGenre = callwcf.parseSearch("Genres", name);
+
+                            } else if (name == "Any" && movieFilterGenre != name) {
+                                movieFilterGenre = "";
+                            }
+                            $("#filterByGenre").text(": " + name);
+
+                            applySearch();
+                        }
+
+                        function changeFilterCategory(name) {
+                            movieFilterCategory = name;
+                            $("#filterByCategory").text(" by " + name);
+                            switch (movieFilterCategory) {
+                                case "Most downloaded":
+                                    movieColumnName = "Seeds";
+                                    movieSortReverse = true;
+                                    movieSortTypeId = 4;
+                                    movieRandomSort = false;
+                                    movieRandomSeed = 0;
+                                    break;
+                                case "New released":
+                                    movieColumnName = "ReleaseDateTicks";
+                                    movieSortReverse = true;
+                                    movieSortTypeId = 6;
+                                    movieRandomSort = false;
+                                    movieRandomSeed = 0;
+                                    break;
+                                case "Popular":
+                                    movieColumnName = "Popularity";
+                                    movieSortReverse = true;
+                                    movieSortTypeId = 7;
+                                    movieRandomSort = false;
+                                    movieRandomSeed = 0;
+                                    break;
+                                case "Random":
+                                    movieColumnName = "";
+                                    movieSortReverse = false;
+                                    movieSortTypeId = -1;
+                                    movieRandomSort = true;
+                                    movieRandomSeed = Math.floor((Math.random() * 1000) + 1);
+                                    break;
+                            }
+
+                            applySearch();
+                        }
+
+                        var movie;
+
+                        function showDetails(movieId) {
+                            $("#movieContainer").append("<div class='spinner-overlay'></div>");
+                            $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres", function(data) {
+
+                                movie = data.d;
+                                $("#mdTitle").text(movie.Title);
+                                $("#mdBigTitle").text(movie.Title);
+                                $("#mdPoster").attr('src', "http://image.tmdb.org/t/p/w150/" + movie.PosterPath);
+                                $("#mdBackdrop").attr('src', "http://image.tmdb.org/t/p/original/" + movie.BackdropPath);
+                                $("#mdOverview").text(movie.Overview);
+                                $("#mdGenres").empty();
+                                $.each(movie.Genres.results, function(index, value) {
+                                    $("#mdGenres").append(value.Name + " ");
+                                });
+
+                                $("#btnPlayMovie").click(function() {
+                                    $("#divMD").addClass("hide");
+                                    playMovieTopTorrent(movie.MovieId);
+                                });
+
+                                $("#btnPlayTrailer").click(function() {
+                                    $("#divMD").addClass("hide");
+                                    playTrailer(movie.Title, movie.MovieId);
+
+                                });
+
+
+                                $("#divMD").removeClass("hide");
+                                $(".spinner-overlay").remove();
+                            });
+                        }
+
+                        function playMovieTopTorrent(movieId) {
+                            $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent&$orderby=Torrent/Seeds%20desc&$top=1&$format=json", function(data) {
+                                if (data.d[0]) {
+                                    var torrent = data.d[0].Torrent;
+                                    main.playTorrent(torrent.Info_Hash, 'movies');
+                                } else
+                                    main.showMessage('Error', 'Unable to download the torrent.');
+                            });
+                        }
+
+                        function playTrailer(title, movieId) {
+                            $("#popup").load("trailer.html", function() {
+                                $("#trailerModalTitle").html(title);
+                                $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")/Trailers?$top=1&$select=Source", function(data) {
+                                    if (data.d[0]) {
+                                        $("#trailerContent").html("<iframe id='trailerPlayer' type='text/html' width='100%' height='360' src='https://www.youtube.com/embed/" + data.d[0].Source + "?autoplay=1&rel=0&showinfo=0&iv_load_policy=3' frameborder='0' allowfullscreen></iframe>");
+                                    } else {
+                                        $("#trailerContent").html("<p>No trailer found.</p>");
+                                    }
+                                });
+                            });
+                        }
+                    </script>
+                    <div id="movies">
+                        <div class="p-10">
+                            <div class="row" style="margin-right:0;">
+                                <div class="col-lg-10">
+                                    <div class="input-group">
+                                        <input id="txtMovieSearch" type="text" class="form-control black-input" placeholder="Movie title...">
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" id="btnSearchMovie" type="button" onclick="changeSearchText();">Search</button>
+                                            <span class="ml-10">
+                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Genres
+                                                    <span id="filterByGenre"></span>
+                                                    <span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu" style="max-height:400px;overflow-y:auto;" role="menu" id="ddmGenres">
+                                                    <li>
+                                                        <a onclick="changeFilterGenre('Any');">Any</a>
+                                                    </li>
+                                                </ul>
+                                            </span>
+                                            <span class="ml-10">
+                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter
+                                                    <span id="filterByCategory"></span>
+                                                    <span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu pull-right" role="menu" id="ddmFilter">
+                                                    <li>
+                                                        <a onclick="changeFilterCategory('Most downloaded')">Most downloaded</a>
+                                                    </li>
+                                                    <li>
+                                                        <a onclick="changeFilterCategory('New released')">New released</a>
+                                                    </li>
+                                                    <li>
+                                                        <a onclick="changeFilterCategory('Popular')">Popular</a>
+                                                    </li>
+                                                    <li>
+                                                        <a onclick="changeFilterCategory('Random')">Random</a>
+                                                    </li>
+                                                </ul>
+                                            </span>
+                                        </span>
+
+                                    </div>
+                                    <!-- /input-group -->
+                                </div>
+                                <!-- /.col-lg-6 -->
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                        <div id="movieContainer" class="isotope" style="overflow-y:auto !important; margin-right:10px;">
+                            <!-- Dynamic content here-->
+                        </div>
+
+                    </div>
+                    <div id="popup"></div>
+                    <div id="divMD" class="hide">
+                        <div id="bufferModel" class="modal fade in show">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" onclick="$('#divMD').addClass('hide');">
+                                            <span class="glyphicon glyphicon-remove"></span>
+                                        </button>
+                                        <span>Details of</span>
+                                        <span id="mdTitle"></span>
+                                    </div>
+                                    <div>
+
+                                        <div style="height: 200px; overflow: hidden; border-bottom: thin solid #b9b9b9; float: left; text-align: center;">
+                                            <img id="mdBackdrop" alt="Backdrop" src="" class="width-100">
+                                        </div>
+                                        <div style="float: left; margin-top: -125px;" class="ml-20">
+                                            <img id="mdPoster" alt="Poster" src="" class="img-box-contour" width="150">
+                                        </div>
+                                        <div class="float-clear"></div>
+                                        <div style="margin-top: -100px;">
+                                            <div style="margin-left: 190px;">
+                                                <div class="pr-10">
+                                                    <div class="header">
+                                                        <h1 id="mdBigTitle"></h1>
+                                                    </div>
+                                                    <div class="p-5">
+                                                        <div id="mdGenres">
+
+                                                        </div>
+                                                        <div class="p-5">
+                                                            <div id="mdGenres">
+
+                                                            </div>
+                                                            <div class="mt-5">
+                                                                <button id="btnPlayMovie" class="btn btn-xs btn-success" title="Play the torrent with the most seeds">
+                                                                    <i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play movie</button>
+                                                                <button id="btnPlayTrailer" class="btn btn-xs btn-primary" title="Play the trailer">
+                                                                    <i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Watch trailer</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="pl-20 pr-20 pb-10">
+                                                <div>
+                                                    <h2>Plot</h2>
+                                                    <p id="mdOverview" style="line-height: 14px;">
+
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-backdrop fade in"></div>
+                    </div>
+                </div>
+            </div>
+        </body>
+
+    </html>
