@@ -5,12 +5,14 @@
         <title>Player</title>
 
         <!-- Javascripts -->
-        <script type='text/javascript' src="../js/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
 
         <!-- Modules -->
         <script>
             var main = require('../js/main.js');
             var engine = main.getEngine();
+            var subManager = main.getSubManager();
+
             $( document ).ready(function() {
                 var stats = function ()
                 {
@@ -44,22 +46,23 @@
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
             </div>
-            <script type="text/javascript" src="../js/video.js"></script>
+
+            <script type="text/javascript" src="../js/extensions/video.js"></script>
             <div id="video-container" style="width:100%; height:100%;">
                 <video id="torrentVideo" class="video-js vjs-default-skin" height="100%" width="100%" controls="controls">
                     <source src="http://127.0.0.1:8888" type='video/mp4' />
                 </video>
             </div>
-            <script src="../js/videojs.errors.js"></script>
+            <script type="text/javascript" src="../js/extensions/videojs.errors.js"></script>
             <script>
                 //Load available subtitles for the current torrent (movie, serie, anime & etc..)
-                if(engine.langFound)
+                if(subManager.list)
                 {
-                    for(i = 0; i < engine.langFound.length; i++)
+                    for(var i = 0; i < subManager.list.length; i++)
                     {
-                        var lang = engine.langFound[i];
+                        var lang = subManager.list[i];
                         console.log(lang);
-                        $("#video-container source").after("<track kind='subtitles' src='http://127.0.0.1:8888/subtitles/" + lang.ISO639 + ".srt' srclang='" + lang.ISO639 + "' label='" + lang.Language + "' />");
+                        $("#video-container source").after("<track kind='subtitles' src='http://127.0.0.1:8000/" + lang.ISO639 + ".srt' srclang='" + lang.ISO639 + "' label='" + lang.Language + "' />");
                     }
                 }
 

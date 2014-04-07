@@ -33,7 +33,6 @@ var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, s
                 "</Envelope>"
         proxy.send(message, "http://tempuri.org/ISearchService/JSONSearch", function (response, ctx) {
             try{
-            console.log(ctx.error);
             var results = $(response).find("JSONSearchResult").text();
             var total = $(response).find("Total").text();
             results = results.replace(/(\r\n|\n|\r)/gm, "");
