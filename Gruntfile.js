@@ -63,4 +63,4 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-node-webkit-builder');
     grunt.registerTask('default', ['nodewebkit', 'copy']);
-}
+};
