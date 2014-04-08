@@ -32,7 +32,7 @@ Click the nw.exe and Flixtor should start working.
 ## Donate
 [Flixtor donate](http://www.flixtor.com/donate/)  
 [Paypal](https://www.paypal.com/ca/cgi-bin/webscr?cmd=_flow&SESSION=Xd6Ovl5GfuD0uOdk1f5xdqx7sSYltH7xqX0klyXYxHjG9kMu1yvDfy62mJe&dispatch=5885d80a13c0db1f8e263663d3faee8d8cdcf517b037b4502f6cc98f1ee6e5fb)  
-Bitcon: soon...
+Bitcoin: soon...
 
 ## Comments
 Flixtor is a new application and is not a segment of Popcorn Time.
