@@ -11,8 +11,8 @@ Based with the [peerflix](https://github.com/mafintosh/peerflix) module and mixe
 Flixtor Beta 1.3
 
 ## Websites
-[Flixtor](http://www.flixtor.com)
-[Torrent Lookup](http://www.torrentlookup.com)
+[Flixtor](http://www.flixtor.com)  
+[Torrent Lookup](http://www.torrentlookup.com)  
 
 ## Install
 	git clone https://github.com/TorrentLookup/Flixtor.git
@@ -30,8 +30,8 @@ Replace `ffmpegsumo` of node-webkit by one inside the librairies folder of the p
 Click the nw.exe and Flixtor should start working.
 
 ## Donate
-[Flixtor donate](http://www.flixtor.com/donate/)
-[Paypal](https://www.paypal.com/ca/cgi-bin/webscr?cmd=_flow&SESSION=Xd6Ovl5GfuD0uOdk1f5xdqx7sSYltH7xqX0klyXYxHjG9kMu1yvDfy62mJe&dispatch=5885d80a13c0db1f8e263663d3faee8d8cdcf517b037b4502f6cc98f1ee6e5fb)
+[Flixtor donate](http://www.flixtor.com/donate/)  
+[Paypal](https://www.paypal.com/ca/cgi-bin/webscr?cmd=_flow&SESSION=Xd6Ovl5GfuD0uOdk1f5xdqx7sSYltH7xqX0klyXYxHjG9kMu1yvDfy62mJe&dispatch=5885d80a13c0db1f8e263663d3faee8d8cdcf517b037b4502f6cc98f1ee6e5fb)  
 Bitcon: soon...
 
 ## Comments
