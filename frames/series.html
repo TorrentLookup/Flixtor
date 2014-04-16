@@ -284,14 +284,17 @@
                             $("#episodeContainer").empty();
                             $(results).each(function(serieTorrent) {
                                 var episodeTorrent = $(this)[0];
+                                var uniqueString = episodeTorrent.Episode.Name + serieId;
+                                var alreadyWatched = !!localStorage[uniqueString];
+                                var eyeMarkup= "<i class='glyphicon glyphicon-eye-open' style='margin-left: -20px;'></i>&nbsp;&nbsp;";
+                                var alreadyWatchedString = alreadyWatched ? eyeMarkup : "";
                                 $("#episodeContainer").append("<tr>" +
-                                    "<td>" + episodeTorrent.Episode.Name + "</td>" +
+                                    "<td>" + alreadyWatchedString + episodeTorrent.Episode.Name + "</td>" +
                                     "<td>" + episodeTorrent.Episode.EpisodeNumber + "</td>" +
                                     "<td>" + episodeTorrent.Episode.SeasonNumber + "</td>" +
                                     "<td>" +
-                                    "<button class='btn btn-xs btn-success' onclick='$(\"#divSD\").addClass(\"hide\");startTorrent(\"" + episodeTorrent.Torrent.InfoHash + "\");' title='Play the torrent with the most seeds'>" +
+                                    "<button class='btn btn-xs btn-success' onclick='localStorage[\"" + uniqueString + "\"]=true;$(\"#divSD\").addClass(\"hide\");startTorrent(\"" + episodeTorrent.Torrent.InfoHash + "\");' title='Play the torrent with the most seeds'>" +
                                     "<i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button></td></tr>");
-
                             });
                         });
                         $("#hSerieId").val(serieId);
