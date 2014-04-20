@@ -25,6 +25,7 @@ The control icons are from a custom font. Each icon corresponds to a character
     font-weight: normal;
     font-style: normal;
 }
+
 /* Base UI Component Classes
 --------------------------------------------------------------------------------
 */
@@ -85,7 +86,7 @@ The default control bar that is a container for most of the controls.
     left: 0;
     right: 0;
     /* Height includes any margin you want above or below control items */
-    height: 3.0em;
+    height: 3.3em;
     /* background-color-with-alpha */
     background-color: #333333;
     background-color: rgba(51, 51, 51, 0.7);
@@ -303,16 +304,15 @@ updates both the em-based widths and heights, as wells as the icon font */
 --------------------------------------------------------------------------------
 */
 .vjs-default-skin .vjs-fullscreen-control {
-    width: 1em;
     cursor: pointer;
     float: right;
 }
 .vjs-default-skin .vjs-fullscreen-control:before {
-    /*  content: "\e000";*/
+    content: "\e000";
 }
 /* Switch to the exit icon when the player is in fullscreen */
 .vjs-default-skin.vjs-fullscreen .vjs-fullscreen-control:before {
-    /*  content: "\e00b";*/
+    content: "\e00b";
 }
 /* Big Play Button (play button at start)
 --------------------------------------------------------------------------------
@@ -672,8 +672,8 @@ body.vjs-full-window {
     margin-bottom: 0.1em;
     /* Transparent black background, or fallback to all black (oldIE) */
     /* background-color-with-alpha */
-    background-color: #000000;
-    background-color: rgba(0, 0, 0, 0.5);
+    /*background-color: #000000;*/
+    /*background-color: rgba(0, 0, 0, 0.5);*/
 }
 .video-js .vjs-subtitles {
     color: #ffffff /* Subtitles are white */;
@@ -726,3 +726,31 @@ body.vjs-full-window {
 /* -----------------------------------------------------------------------------
 The original source of this file lives at
 https://github.com/videojs/video.js/blob/master/src/css/video-js.less */
+
+
+/* More buttons */
+@font-face {
+    font-family: 'glyphicons';
+    src: url('/fonts/glyphicons-halflings-regular.eot');
+    src: url('/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('/fonts/glyphicons-halflings-regular.woff') format('woff'), url('/fonts/glyphicons-halflings-regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.vjs-default-skin .vjs-fontsize-button {
+    width: 5em;
+    cursor: pointer;
+}
+.vjs-default-skin .vjs-fontsize-button:before {
+    font-family: glyphicons !important;
+    content: "\e050";
+    margin-top: 1px;
+    font-size:  14px !important;
+}
+
+.vjs-default-skin .vjs-fontcolor-button:before {
+    font-family: glyphicons !important;
+    content: "\e048";
+    margin-top: 1px;
+    font-size:  14px !important;
+}

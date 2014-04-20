@@ -1,5 +1,6 @@
 var $ = window.$;
 var main = require('../js/main.js');
+
 //External functions
 var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, sortReverse, sortTypeId, randomSort, randomSeed, skip, max, callback) {
 
@@ -72,9 +73,11 @@ var getSimpleTopSerieTorrents = function (serieId, callback) {
         callback(jsonResult);
     });
 }
+
 var reloadInstance = function () {
     $ = window.$;
 }
+
 var parseSearch = function (key, search) {
     if (search) {
         search = search.replace("[^\w\s_]", " ").replace("_", " ");

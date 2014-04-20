@@ -23,7 +23,7 @@
         "nodealytics": "~0.0.5",
         "numeral": "~1.5.3",
         "opensubtitles-client": "~1.1.0",
-        "peerflix": "~0.5.2",
+        "peerflix": "~0.5.5",
         "request": "~2.34.0",
         "subsync": "~0.0.1",
         "wcf.js": "~0.0.6"

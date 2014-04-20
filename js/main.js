@@ -22,14 +22,12 @@ var NA = require("nodealytics");
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
 var engine, sub;
-var serverFlag, engineFrame;
+var serverFlag;
 
 //External functions
-var playTorrent = function (infoHash, currentFrame) {
+var playTorrent = function (infoHash) {
     var torrent;
-
     serverFlag = false;
-    engineFrame = currentFrame;
 
     var randPort = Math.floor(Math.random() * 65535) + 49152; //Choose port between 49152 and 65535
     $('#popup').load("loader.html");
@@ -72,11 +70,11 @@ var playTorrent = function (infoHash, currentFrame) {
         console.log('resumed');
     });
 
-    engine.on('torrent', function(torrent) {
-
+    engine.on('ready', function() {
+        console.log(engine.torrent);
         sub = subManager();
 
-        sub.setSubtitles(torrent.name, function (success) {
+        sub.setSubtitles(engine.torrent.name, function (success) {
             if(!success)
                 engine.skipSubtitles = true;
 
@@ -209,19 +207,14 @@ var stopDownload = function () {
             }
 
             rmDir("./data");
-
-            if (window.location == "app://host/frames/player.html") {
-                window.location = engineFrame + ".html";
-            }
-
             console.log("Download has stopped!");
         }, 500);
     }
 }
 
-var stopPlayer = function () {
+var stopPlayer = function (backCount) {
     stopDownload();
-    changeFrame('movies');
+    window.history.go(-backCount);
 }
 
 var closeApp = function () {
