@@ -3,10 +3,8 @@
 
     <head>
         <title>Player</title>
-        <meta charset="utf-8">
         <!-- Javascripts -->
         <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
-
         <!-- Modules -->
         <script>
             var gui = window.require('nw.gui');
@@ -83,9 +81,8 @@
                     {
                         for(var i = 0; i < subManager.list.length; i++)
                         {
-                            var lang = subManager.list[i];
-                            console.log(lang);
-                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:8000/" + lang.ISO639 + ".srt' srclang='" + lang.ISO639 + "' label='" + lang.Language + "' />");
+                            var subtitle = subManager.list[i];
+                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:8000/" + subtitle.ISO639 + ".srt' srclang='" + subtitle.ISO639 + "' label='" + subtitle.languageName + "' />");
                         }
 
                         //Initialize videojs with buttons for subtitles
@@ -108,10 +105,10 @@
                 }
 
                 //Check for errors
-                video.errors({
-                    messages: {
-                    }
-                });
+                //video.errors({
+                //messages: {
+                //}
+                //});
 
                 //When the video is ready play it automatically
                 video.ready(function() {

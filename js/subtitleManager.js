@@ -1,10 +1,13 @@
 var openSubs = require('opensubtitles-client'); //Max 200 srt download per day :S
 var http = require('http');
 var zlib = require('zlib');
-var path = require('path');
+var pathManager = require('path');
 var requestManager = require('request');
 var url = require('url');
 var fs = require('fs');
+var charset = require('jschardet');
+var iconv = require('iconv-lite');
+var main = require('../js/main.js');
 
 var subManager = function()
 {
@@ -24,19 +27,18 @@ var subManager = function()
         if (u.pathname === '/favicon.ico')
             return response.end();
 
-        var filename = path.basename(u.pathname, '.srt');
+        var filename = pathManager.basename(u.pathname, '.srt');
 
         var sub = manager.get(filename);
-        if(sub)
-        {
-            var data = manager.download(sub.SubDownloadLink);
-            if(data) {
-                data.setEncoding('utf8');
-                return data.pipe(response);
+        if(sub.isDownloaded) {
+            if(sub.data) {
+                response.end(manager.decode(sub.data));
             }
+        }else {
+            sub.download(function (data) {
+                response.end(manager.decode(data));
+            });
         }
-
-        return response.end();
     });
 
 
@@ -51,24 +53,20 @@ var subManager = function()
                     function(results){
                         for(var i=0; i < results.length; i++)
                         {
-                            var sub = results[i];
-                            if(sub.SubFormat === "srt")
+                            var result = results[i];
+                            if(result.SubFormat === "srt")
                             {
                                 var found = false;
                                 for(var a = 0; a < manager.list.length; a++) {
-                                    if (manager.list[a].ISO639 == sub.ISO639) {
+                                    if (manager.list[a].ISO639 == result.ISO639) {
                                         found = true;
                                         break;
                                     }
                                 }
 
-                                if(!found)
-                                {
-                                    var langValues = {};
-                                    langValues.ISO639 = sub.ISO639;
-                                    langValues.Language = sub.LanguageName;
-                                    langValues.SubDownloadLink = sub.SubDownloadLink;
-                                    manager.list.push(langValues);
+                                if(!found) {
+                                    var subtitle = new sub(result.LanguageName, result.ISO639, result.SubDownloadLink);
+                                    manager.list.push(subtitle);
                                 }
                             }
                         }
@@ -102,35 +100,17 @@ var subManager = function()
     }
 
     //Download a specific subtitle
-    manager.download = function(subLink) {
-        if(subLink) {
-            return requestManager.get(subLink).pipe(zlib.createGunzip());
+    manager.decode = function(data) {
+        var charsetData = charset.detect(data);
+        var detecdedEncoding = charsetData.encoding;
+        var targetEncoding = "utf8";
+
+        //We don't need to convert UTF-8
+        if(detecdedEncoding != "utf-8") {
+            data = iconv.encode(iconv.decode(data, detecdedEncoding), targetEncoding);
         }
 
-        return;
-    }
-
-    //Save subtitle in the data folder
-    manager.save = function(lang) {
-        var sub = manager.get(lang);
-        if(sub)
-        {
-            var path = './data/' + lang + '.srt';
-            if (fs.existsSync(path)) {
-                //Retrieve subtitle from file
-                sub.Data = fs.createReadStream(path);
-            }else {
-                //Download subtitle & save file
-                var data = manager.dowload(sub.SubDownloadLink);
-                var wstream = fs.createWriteStream('./data/' + lang + '.srt', {encoding : "UTF-8"});
-                data.pipe(wstream);
-
-                if (fs.existsSync(path)) {
-                    //Retrieve subtitle from file
-                    sub.Data = fs.createReadStream(path);
-                }
-            }
-        }
+        return data.toString("utf-8");
     }
 
     //Load saved subtitle config
@@ -152,17 +132,69 @@ var subManager = function()
         window.localStorage.setItem('subtitleConfig', JSON.stringify(manager.config));
     }
 
-    //Add delay to the subtitle of your choice
-    manager.addDelay = function(lang, value) {
-        var sub = manager.get(lang);
-    }
-
-    //Remove delay to the subtitle of your choice
-    manager.removeDelay = function(lang, value) {
-        var sub = manager.get(lang);
-    }
-
     return manager;
+}
+
+var sub = function(lang, iso, subLink)
+{
+    var sub = {};
+    sub.ISO639 = iso;
+    sub.languageName = lang;
+    sub.downloadLink = subLink;
+
+    sub.isDownloaded = false;
+    sub.data;
+
+    //Save subtitle to a file
+    sub.save = function(path) {
+        if(!sub.isDownloaded) {
+            sub.download();
+        }
+
+        //Save
+        var wstream = fs.createWriteStream(path);
+        sub.data.pipe(wstream);
+    }
+
+    //Download & decompress the subtitle
+    sub.download = function(cb) {
+        //Download
+        var req = requestManager.get(subLink);
+
+        req.on('response', function (res) {
+            var chunks = [];
+            res.on('data', function (chunk) {
+                chunks.push(chunk);
+            });
+
+            res.on('end', function () {
+                var buffer = Buffer.concat(chunks);
+
+                //Decompress
+                zlib.gunzip(buffer, function (err, decoded) {
+                    sub.data = decoded;
+                    sub.isDownloaded = true;
+                    cb(decoded);
+                });
+            });
+        });
+
+        req.on('error', function (err) {
+            console.log(err);
+        });
+    }
+
+    //Add delay to the subtitle of your choice TODO!!
+    sub.addDelay = function(value) {
+
+    }
+
+    //Remove delay to the subtitle of your choice TODO!!
+    sub.removeDelay = function(value) {
+
+    }
+
+    return sub;
 }
 
 module.exports = subManager;
