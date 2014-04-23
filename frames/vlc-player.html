@@ -1,39 +1,39 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-    <title>Player</title>
+    <head>
+        <title>Player</title>
 
-    <!-- Modules -->
-    <script>
-        var main = require('../js/main.js');
-        var $ = window.$;
-    </script>
+        <!-- Modules -->
+        <script>
+            var main = require('../js/main.js');
+            var $ = window.$;
+        </script>
 
-    <!-- Styles -->
-    <link href="../styles/video-skin.css" rel="stylesheet">
-    <link href="../styles/bootstrap.min.css" rel="stylesheet">
-    <link href="../styles/bootly.css" rel="stylesheet">
-    <link href="../styles/videojs.errors.css" rel="stylesheet">
-</head>
+        <!-- Styles -->
+        <link href="../styles/video-skin.css" rel="stylesheet">
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
+        <link href="../styles/videojs.errors.css" rel="stylesheet">
+    </head>
 
-<body style="margin:0; overflow:hidden;">
-    <div id="wrapper">
-        <div id="top-bar">
-            <div class="top-titlebar-text">Flixtor</div>
-            <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
-                <span class="glyphicon glyphicon-minus"></span>
+    <body style="margin:0; overflow:hidden;">
+        <div id="wrapper">
+            <div id="top-bar">
+                <div class="top-titlebar-text">Flixtor</div>
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.stopPlayer(2);" title="Stop player">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
             </div>
-            <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
-                <span class="glyphicon glyphicon-fullscreen"></span>
+            <div id="video-container" style="width:100%; height:100%;">
+                <embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" style="position:absolute; top:30px; z-index:-10000;" width="100%" height="96%" id="vlc" autoplay="yes" target="http://127.0.0.1:8888/" />
             </div>
-            <div class="top-titlebar-close-button" onclick="main.stopPlayer();" title="Stop player">
-                <span class="glyphicon glyphicon-remove"></span>
-            </div>
-        </div>
-        <div id="video-container" style="width:100%; height:100%;">
-            <embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2" style="position:absolute; top:30px; z-index:-10000;" width="100%" height="96%" id="vlc" loop="yes" autoplay="yes" target="http://127.0.0.1:8888/">
-        </div>
         </embed>
 
     </div>
