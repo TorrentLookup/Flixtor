@@ -8,7 +8,7 @@ Based with the peerflix module and mixed with services from TorrentLookup. All o
 ![Alt text](http://www.flixtor.com/img/app-flixtor.jpg  "Flixtor - Movie section")
 
 ## Latest build
-Flixtor Beta 1.3
+Flixtor Beta 1.5
 
 ## Websites
 [Flixtor](http://www.flixtor.com)  
