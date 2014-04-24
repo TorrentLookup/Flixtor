@@ -10,7 +10,7 @@ module.exports = function (grunt) {
                 linux64: true, // We don't need linux64
                 mac_icns: './src/images/flixtor-ico.icns'
             },
-            src: ['./src/frames/**', './src/fonts/**', './src/images/**', './src/js/**', './src/node_modules/**', './src/styles/**', './src/package.json'] // Your node-wekit app
+            src: ['./frames/**', './fonts/**', './images/**', './js/**', './node_modules/**', './styles/**', './package.json'] // Your node-wekit app
         },
         copy: {
             main: {
@@ -63,4 +63,4 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-node-webkit-builder');
     grunt.registerTask('default', ['nodewebkit', 'copy']);
-}
+};
