@@ -22,16 +22,14 @@ var NA = require("nodealytics");
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
 var engine, sub;
-var serverFlag, engineFrame;
+var serverFlag;
 
 //External functions
-var playTorrent = function (infoHash, currentFrame) {
+var playTorrent = function (infoHash) {
     var torrent;
-
     serverFlag = false;
-    engineFrame = currentFrame;
 
-    var randPort = Math.floor(Math.random() * 65535) + 49152; //Choose port between 49152 and 65535
+    var randPort = Math.floor(Math.random() * (65535 - 49152 + 1)) + 49152; //Choose port between 49152 and 65535
     $('#popup').load("loader.html");
 
     if (engine) {
@@ -72,11 +70,12 @@ var playTorrent = function (infoHash, currentFrame) {
         console.log('resumed');
     });
 
-    engine.on('torrent', function(torrent) {
-
+    engine.on('ready', function() {
+        console.log(engine.torrent);
+        console.log(engine.tracker);
         sub = subManager();
 
-        sub.setSubtitles(torrent.name, function (success) {
+        sub.setSubtitles(engine.torrent.name, function (success) {
             if(!success)
                 engine.skipSubtitles = true;
 
@@ -197,31 +196,26 @@ var stopDownload = function () {
             //engine.myass.destroy();
 
             try {
-            engine.destroy();
-            engine.server.listen(0);
-            engine.server.close();
+                engine.destroy();
+                engine.server.listen(0);
+                engine.server.close();
 
-            if(sub)
-                sub.server.close();
+                if(sub)
+                    sub.server.close();
             }catch (e)
             {
                 console.log(e);
             }
 
             rmDir("./data");
-
-            if (window.location == "app://host/frames/player.html") {
-                window.location = engineFrame + ".html";
-            }
-
             console.log("Download has stopped!");
         }, 500);
     }
 }
 
-var stopPlayer = function () {
+var stopPlayer = function (backCount) {
     stopDownload();
-    changeFrame('movies');
+    window.history.go(-backCount);
 }
 
 var closeApp = function () {
@@ -335,24 +329,6 @@ function minimize() {
 //Focus the app on startup
 win.focus();
 
-//Exports
-module.exports.checkInternetConnection = checkInternetConnection;
-module.exports.minimize = minimize;
-module.exports.toggleFullScreen = toggleFullScreen;
-module.exports.showMessage = showMessage;
-module.exports.stopDownload = stopDownload;
-module.exports.stopPlayer = stopPlayer;
-module.exports.closeApp = closeApp;
-module.exports.playTorrent = playTorrent;
-module.exports.changeFrame = changeFrame;
-module.exports.reloadInstance = reloadInstance;
-module.exports.$ = $;
-module.exports.NA = NA;
-module.exports.getEngine = getEngine;
-module.exports.bytes = bytes;
-module.exports.getSubManager = getSubManager;
-
-//Internal functions
 var headers = {
     "accept-charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.3",
     "accept-language": "en-US,en;q=0.8",
@@ -373,17 +349,11 @@ var requestWithEncoding = function (url, callback) {
         res.on('end', function () {
             var buffer = Buffer.concat(chunks);
             var encoding = res.headers['content-encoding'];
-            if (encoding == 'gzip') {
+
                 zlib.gunzip(buffer, function (err, decoded) {
                     callback(err, decoded);
                 });
-            } else if (encoding == 'deflate') {
-                zlib.inflate(buffer, function (err, decoded) {
-                    callback(err, decoded);
-                })
-            } else {
-                callback(null, buffer);
-            }
+
         });
     });
 
@@ -391,6 +361,25 @@ var requestWithEncoding = function (url, callback) {
         callback(err, null);
     });
 }
+
+//Exports
+module.exports.checkInternetConnection = checkInternetConnection;
+module.exports.minimize = minimize;
+module.exports.toggleFullScreen = toggleFullScreen;
+module.exports.showMessage = showMessage;
+module.exports.stopDownload = stopDownload;
+module.exports.stopPlayer = stopPlayer;
+module.exports.closeApp = closeApp;
+module.exports.playTorrent = playTorrent;
+module.exports.changeFrame = changeFrame;
+module.exports.reloadInstance = reloadInstance;
+module.exports.$ = $;
+module.exports.NA = NA;
+module.exports.getEngine = getEngine;
+module.exports.bytes = bytes;
+module.exports.getSubManager = getSubManager;
+module.exports.requestWithEncoding = requestWithEncoding;
+
 process.on('uncaughtException', function (err) {
     console.error('An uncaughtException was found, the program will end.');
 

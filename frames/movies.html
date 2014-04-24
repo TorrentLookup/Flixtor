@@ -16,15 +16,15 @@
         <script>
             var main = require('../js/main.js');
             var callwcf = require('../js/callwcf.js');
+
             main.reloadInstance();
             callwcf.reloadInstance();
+
             $(document).ready(function() {
                 //Scroll bar
                 $(window).resize(function() {
                     $("#movieContainer").css('max-height', ($(window).height() - 95) + "px");
-                });
-
-                $(window).resize();
+                }).trigger("resize");
 
                 //Search key press (enter)
                 $('#txtMovieSearch').keypress(function(e) {
@@ -35,6 +35,15 @@
 
                 //Populate genre on page load
                 callwcf.getGenres('ddmGenres');
+
+                //By default we filter by most downloaded
+                changeFilterCategory("Most downloaded");
+
+                //Persistence
+                if(sessionStorage.movie) {
+                    var movie = $.parseJSON(sessionStorage.movie);
+                    showDetails(movie.MovieId);
+                }
             });
         </script>
 
@@ -117,40 +126,24 @@
                 </div>
                 <div id="content">
                     <script type="text/javascript">
-                        var movieSearchValue, movieFilterCategory, movieFilterGenre, movieColumnName, movieSortReverse, movieSortTypeId, movieRandomSort, movieRandomSeed, movieSkip, movieMax;
-
-                        $(document).ready(function() {
-                            //Search persistance
-                            $('#txtMovieSearch').val(movieSearchValue);
-
-                            if (movieFilterGenre) {
-                                changeFilterGenre(movieFilterGenre.replace("+Genres:", "").replace("*", ""));
-                            } else {
-                                $("#filterByGenre").text(": Any");
-                            }
-
-                            if (movieFilterCategory) {
-                                changeFilterCategory(movieFilterCategory);
-                            } else {
-                                changeFilterCategory("Most downloaded");
-                            }
-                        });
-
+                        var movieFilter = {};
 
                         function applySearch() {
-
+                            //Display the spinner while we wait for the data.
                             $("#wrapper").append("<div class='spinner-overlay'></div>");
 
-                            if (!movieSkip) {
-                                movieSkip = 0;
+                            //We skip to 0
+                            if (!movieFilter.skip) {
+                                movieFilter.skip = 0;
                             }
 
-                            if (!movieMax) {
-                                movieMax = 75;
+                            //Display maximum of 75 movies per request
+                            if (!movieFilter.max) {
+                                movieFilter.max = 75;
                             }
 
-
-                            callwcf.searchTable("Movies", "Title", movieSearchValue, movieFilterGenre, movieColumnName, movieSortReverse, movieSortTypeId, movieRandomSort, movieRandomSeed, movieSkip, movieMax, function(results) {
+                            //Search for movies
+                            callwcf.searchTable("Movies", "Title", movieFilter.searchValue, movieFilter.genre, movieFilter.columnName, movieFilter.sortReverse, movieFilter.sortTypeId, movieFilter.randomSort, movieFilter.randomSeed, movieFilter.skip, movieFilter.max, function(results) {
                                 if(results == "error")
                                 {
                                     $('.spinner-overlay').remove();
@@ -196,89 +189,99 @@
                         }
 
                         function changeSearchText() {
-                            movieSearchValue = $('#txtMovieSearch').val();
+                            movieFilter.searchValue = $('#txtMovieSearch').val();
                             applySearch();
                         }
 
                         function changeFilterGenre(name) {
-                            if (name != "Any" && movieFilterGenre != name) {
-                                movieFilterGenre = callwcf.parseSearch("Genres", name);
+                            if (name != "Any" && movieFilter.genre != name) {
+                                movieFilter.genre = callwcf.parseSearch("Genres", name);
 
-                            } else if (name == "Any" && movieFilterGenre != name) {
-                                movieFilterGenre = "";
+                            } else if (name == "Any" && movieFilter.genre != name) {
+                                movieFilter.genre = "";
                             }
+
                             $("#filterByGenre").text(": " + name);
 
                             applySearch();
                         }
 
                         function changeFilterCategory(name) {
-                            movieFilterCategory = name;
+                            movieFilter.category = name;
                             $("#filterByCategory").text(" by " + name);
-                            switch (movieFilterCategory) {
+                            switch (movieFilter.category) {
                                 case "Most downloaded":
-                                    movieColumnName = "Seeds";
-                                    movieSortReverse = true;
-                                    movieSortTypeId = 4;
-                                    movieRandomSort = false;
-                                    movieRandomSeed = 0;
+                                    movieFilter.columnName = "Seeds";
+                                    movieFilter.sortReverse = true;
+                                    movieFilter.sortTypeId = 4;
+                                    movieFilter.randomSort = false;
+                                    movieFilter.randomSeed = 0;
                                     break;
                                 case "New released":
-                                    movieColumnName = "ReleaseDateTicks";
-                                    movieSortReverse = true;
-                                    movieSortTypeId = 6;
-                                    movieRandomSort = false;
-                                    movieRandomSeed = 0;
+                                    movieFilter.columnName = "ReleaseDateTicks";
+                                    movieFilter.sortReverse = true;
+                                    movieFilter.sortTypeId = 6;
+                                    movieFilter.randomSort = false;
+                                    movieFilter.randomSeed = 0;
                                     break;
                                 case "Popular":
-                                    movieColumnName = "Popularity";
-                                    movieSortReverse = true;
-                                    movieSortTypeId = 7;
-                                    movieRandomSort = false;
-                                    movieRandomSeed = 0;
+                                    movieFilter.columnName = "Popularity";
+                                    movieFilter.sortReverse = true;
+                                    movieFilter.sortTypeId = 7;
+                                    movieFilter.randomSort = false;
+                                    movieFilter.randomSeed = 0;
                                     break;
                                 case "Random":
-                                    movieColumnName = "";
-                                    movieSortReverse = false;
-                                    movieSortTypeId = -1;
-                                    movieRandomSort = true;
-                                    movieRandomSeed = Math.floor((Math.random() * 1000) + 1);
+                                    movieFilter.columnName = "";
+                                    movieFilter.sortReverse = false;
+                                    movieFilter.sortTypeId = -1;
+                                    movieFilter.randomSort = true;
+                                    movieFilter.randomSeed = Math.floor((Math.random() * 1000) + 1);
                                     break;
                             }
 
                             applySearch();
                         }
 
-                        var movie;
-
                         function showDetails(movieId) {
+                            //Display spinner while we wait for data
                             $("#movieContainer").append("<div class='spinner-overlay'></div>");
+
                             $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres", function(data) {
 
-                                movie = data.d;
+                                var movie = data.d;
                                 $("#mdTitle").text(movie.Title);
                                 $("#mdBigTitle").text(movie.Title);
                                 $("#mdPoster").attr('src', "http://image.tmdb.org/t/p/w150/" + movie.PosterPath);
-                                $("#mdBackdrop").attr('src', "http://image.tmdb.org/t/p/original/" + movie.BackdropPath);
+
+                                if(movie.BackdropPath)
+                                    $("#mdBackdrop").attr('src', "http://image.tmdb.org/t/p/original/" + movie.BackdropPath);
+
                                 $("#mdOverview").text(movie.Overview);
+
                                 $("#mdGenres").empty();
                                 $.each(movie.Genres.results, function(index, value) {
                                     $("#mdGenres").append(value.Name + " ");
                                 });
 
+                                //Assign click event for playing the movie :D
                                 $("#btnPlayMovie").click(function() {
                                     $("#divMD").addClass("hide");
                                     playMovieTopTorrent(movie.MovieId);
                                 });
 
+                                //Assign click event for trailer
                                 $("#btnPlayTrailer").click(function() {
                                     $("#divMD").addClass("hide");
-                                    playTrailer(movie.Title, movie.MovieId);
-
+                                    playTrailer();
                                 });
 
+                                //Keep the movie in a session
+                                sessionStorage.setItem('movie', JSON.stringify(movie));
 
                                 $("#divMD").removeClass("hide");
+
+                                //Remove spinner since we got the data we need.
                                 $(".spinner-overlay").remove();
                             });
                         }
@@ -287,16 +290,17 @@
                             $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent&$orderby=Torrent/Seeds%20desc&$top=1&$format=json", function(data) {
                                 if (data.d[0]) {
                                     var torrent = data.d[0].Torrent;
-                                    main.playTorrent(torrent.Info_Hash, 'movies');
+                                    main.playTorrent(torrent.Info_Hash);
                                 } else
                                     main.showMessage('Error', 'Unable to download the torrent.');
                             });
                         }
 
-                        function playTrailer(title, movieId) {
+                        function playTrailer() {
+                            var movie = $.parseJSON(sessionStorage.movie);
                             $("#popup").load("trailer.html", function() {
-                                $("#trailerModalTitle").html(title);
-                                $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")/Trailers?$top=1&$select=Source", function(data) {
+                                $("#trailerModalTitle").html(movie.Title);
+                                $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movie.MovieId + ")/Trailers?$top=1&$select=Source", function(data) {
                                     if (data.d[0]) {
                                         $("#trailerContent").html("<iframe id='trailerPlayer' type='text/html' width='100%' height='360' src='https://www.youtube.com/embed/" + data.d[0].Source + "?autoplay=1&rel=0&showinfo=0&iv_load_policy=3' frameborder='0' allowfullscreen></iframe>");
                                     } else {
@@ -304,6 +308,12 @@
                                     }
                                 });
                             });
+                        }
+
+                        function closeMovie()
+                        {
+                            $('#divMD').addClass('hide');
+                            sessionStorage.removeItem('movie');
                         }
                     </script>
                     <div id="movies">
@@ -316,7 +326,7 @@
                                             <button class="btn btn-default" id="btnSearchMovie" type="button" onclick="changeSearchText();">Search</button>
                                             <span class="ml-10">
                                                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Genres
-                                                    <span id="filterByGenre"></span>
+                                                    <span id="filterByGenre"> : Any</span>
                                                     <span class="caret"></span>
                                                 </button>
                                                 <ul class="dropdown-menu" style="max-height:400px;overflow-y:auto;" role="menu" id="ddmGenres">
@@ -365,7 +375,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close" onclick="$('#divMD').addClass('hide');">
+                                        <button type="button" class="close" onclick="closeMovie();">
                                             <span class="glyphicon glyphicon-remove"></span>
                                         </button>
                                         <span>Details of</span>

@@ -3,12 +3,12 @@
 
     <head>
         <title>Player</title>
-
         <!-- Javascripts -->
         <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
-
         <!-- Modules -->
         <script>
+            var gui = window.require('nw.gui');
+            var win = gui.Window.get();
             var main = require('../js/main.js');
             var engine = main.getEngine();
             var subManager = main.getSubManager();
@@ -16,11 +16,29 @@
             $( document ).ready(function() {
                 var stats = function ()
                 {
+                    if(!engine) {
+                        clearInterval(stats);
+                        return;
+                    }
+
                     $("#top-stats").html(main.bytes(engine.swarm.downloaded) + " - " + main.bytes(engine.swarm.downloadSpeed()) + "/s");
                 }
 
                 setInterval(stats, 1000);
             });
+
+            var setSubConfig = function(config)
+            {
+                $("#customCSS").empty();
+                if(config.color == "rainbow")
+                {
+                    //If super ultimate rainbow we have to do a special style ;)
+                    $( "<style>.video-js .vjs-subtitles { background-image: -webkit-gradient( linear, left top, right top, color-stop(0, #f22), color-stop(0.15, #f2f), color-stop(0.3, #22f), color-stop(0.45, #2ff), color-stop(0.6, #2f2),color-stop(0.75, #2f2), color-stop(0.9, #ff2), color-stop(1, #f22) ); background-image: gradient( linear, left top, right top, color-stop(0, #f22), color-stop(0.15, #f2f), color-stop(0.3, #22f), color-stop(0.45, #2ff), color-stop(0.6, #2f2),color-stop(0.75, #2f2), color-stop(0.9, #ff2), color-stop(1, #f22) ); color:transparent; -webkit-background-clip: text; background-clip: text; font-size:" + config.size  + "px; }</style>" ).appendTo("#customCSS");
+                }else{
+                    //Apply changes
+                    $( "<style>.video-js .vjs-subtitles { color: " + config.color + "; font-size:" + config.size  + "px; }</style>" ).appendTo("#customCSS");
+                }
+            }
 
         </script>
 
@@ -32,6 +50,7 @@
     </head>
 
     <body style="margin:0; overflow:hidden;">
+        <div id="customCSS"></div>
         <div id="wrapper" class="">
             <div id="top-bar">
                 <div class="top-titlebar-text">Flixtor</div>
@@ -42,7 +61,7 @@
                 <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
                     <span class="glyphicon glyphicon-fullscreen"></span>
                 </div>
-                <div class="top-titlebar-close-button" onclick="main.stopPlayer();" title="Stop player">
+                <div class="top-titlebar-close-button" onclick="main.stopPlayer(1);" title="Stop player">
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
             </div>
@@ -53,37 +72,63 @@
                     <source src="http://127.0.0.1:8888" type='video/mp4' />
                 </video>
             </div>
+            <script type="text/javascript" src="../js/videojsButtons.js"></script>
             <script type="text/javascript" src="../js/extensions/videojs.errors.js"></script>
             <script>
                 //Load available subtitles for the current torrent (movie, serie, anime & etc..)
-                if(subManager.list)
-                {
-                    for(var i = 0; i < subManager.list.length; i++)
+                if(subManager) {
+                    if(subManager.list)
                     {
-                        var lang = subManager.list[i];
-                        console.log(lang);
-                        $("#video-container source").after("<track kind='subtitles' src='http://127.0.0.1:8000/" + lang.ISO639 + ".srt' srclang='" + lang.ISO639 + "' label='" + lang.Language + "' />");
+                        for(var i = 0; i < subManager.list.length; i++)
+                        {
+                            var subtitle = subManager.list[i];
+                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:8000/" + subtitle.ISO639 + ".srt' srclang='" + subtitle.ISO639 + "' label='" + subtitle.languageName + "' />");
+                        }
+
+                        //Initialize videojs with buttons for subtitles
+                        var video = videojs("torrentVideo", {
+                            plugins : { fontcolor : {}, fontsize : {} }
+                        });
+
+                        //Load size and color default config -- Initialize subtitles config
+                        subManager.loadConfig(); //Get config values from localSettings
+                        setSubConfig(subManager.config); //Apply changes to the player
+
+                        //Set selected style to the buttons
+                        $(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
+                        $(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
+
                     }
+                }else {
+                    //Initialize the default videojs
+                    var video = videojs("torrentVideo");
                 }
 
-                //Initialize videojs
-                var video = videojs("torrentVideo");
-
                 //Check for errors
-                video.errors({
-                    messages: {
-                    }
-                });
+                //video.errors({
+                //messages: {
+                //}
+                //});
 
                 //When the video is ready play it automatically
                 video.ready(function() {
-                    var myPlayer = this;
-                    console.log("ready!");
-                    myPlayer.play();
+                    this.play();
                 });
             </script>
         </div>
         <script>
+            //Fullscreen with player
+            $(".vjs-fullscreen-control").click(function () {
+                if(win.isFullscreen) {
+                    $("#torrentVideo").removeClass("vjs-fullscreen");
+                }
+                else {
+                    $("#torrentVideo").addClass("vjs-fullscreen");
+                }
+
+                win.toggleFullscreen();
+            });
+
             //Hide top bar & bottom if mouse is idle
             var timeout, mX, mY;
             $("body").mousemove(function( event ) {
@@ -113,6 +158,84 @@
                     $(".vjs-control-bar").removeClass("vjs-fade-in").addClass("vjs-fade-out");
                     $("body").css("cursor","none");
                 }, 3000);
+            });
+
+            //Set font size
+            $(".vjs-fontsize-button .vjs-menu-item").click(function () {
+                if(subManager)
+                {
+                    //Get the size
+                    var size = $(this).data('val');
+
+                    //Set size in sub config
+                    subManager.config.size = size;
+
+                    //Apply the style
+                    setSubConfig(subManager.config);
+                    $(".vjs-fontsize-button .vjs-menu-item").removeClass("vjs-selected");
+                    $(this).addClass("vjs-selected");
+
+                    //Save config for persistence
+                    subManager.saveConfig();
+                }
+            });
+
+            //Set font color
+            $(".vjs-fontcolor-button .vjs-menu-item").click(function () {
+                if(subManager)
+                {
+                    //Get the color.
+                    var color = $(this).data('val');
+
+                    //Set the color in the sub config.
+                    subManager.config.color = "" + color + "";
+
+                    //Apply the config to the style.
+                    setSubConfig(subManager.config);
+                    $(".vjs-fontcolor-button .vjs-menu-item").removeClass("vjs-selected");
+                    $(this).addClass("vjs-selected");
+
+                    //Save the config for next use. (Persistence)
+                    subManager.saveConfig();
+                }
+            });
+
+            // Keyboard events
+            $(document).off('keydown.playercontrol').on('keydown.playercontrol', function(e) {
+                if (e.preventDefault) e.preventDefault();
+                var key = e.keyCode;
+                switch (key) {
+                        // esc
+                    case 27:
+                        if(win.isFullscreen) {
+                            win.leaveFullscreen();
+                        }
+                        break;
+                        // F
+                    case 70:
+                        win.toggleFullscreen();
+                        break;
+                        //backspace
+                    case 8:
+                        win.reload();
+                        break;
+                        //Space
+                    case 32:
+                        if(video.paused()) {
+                            video.play();
+                        }else{
+                            video.pause();
+                        }
+                        break;
+                        //m
+                    case 77:
+                        if(video.muted()) {
+                            video.muted(false);
+                        }else{
+                            video.muted(true);
+                        }
+                        break;
+                }
             });
         </script>
     </body>
