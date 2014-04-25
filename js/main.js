@@ -21,13 +21,15 @@ var NA = require("nodealytics");
 //NA.initialize('UA-42435534-2', 'www.flixtor.com', function () {});
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
-var engine, sub;
+var engine, sub, enginePort, subPort;
 var serverFlag;
 
 //External functions
 var playTorrent = function (infoHash) {
     var torrent;
     serverFlag = false;
+    enginePort = 3549 //popcorn-time use 8888 so let's change it to 3549 which means [flix] in telephone numbers :P
+    subPort = 3550
 
     var randPort = Math.floor(Math.random() * (65535 - 49152 + 1)) + 49152; //Choose port between 49152 and 65535
     $('#popup').load("loader.html");
@@ -82,7 +84,7 @@ var playTorrent = function (infoHash) {
             engine.langFound = success;
         });
 
-        sub.server.listen(8000);
+        sub.server.listen(subPort);
     });
 
     engine.server.on('listening', function () {
@@ -119,7 +121,7 @@ var playTorrent = function (infoHash) {
         var minimum = 5242880; //1.5mb
         engine.skipSubtitles = false;
         var isVideoReady = function () {
-            if (swarm.downloaded > minimum && port == 8888) {
+            if (swarm.downloaded > minimum && port == enginePort) {
                 console.log("Ready!");
                 $("#bufferProgressBar").addClass("hide");
 
@@ -170,7 +172,7 @@ var playTorrent = function (infoHash) {
         console.log(err);
     });
 
-    engine.server.listen(8888);
+    engine.server.listen(enginePort);
 }
 
 var rmDir = function(dirPath) {

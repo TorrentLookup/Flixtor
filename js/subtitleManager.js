@@ -21,7 +21,7 @@ var subManager = function()
         color: '#ffff00'
     }
 
-    //Return the subtitle when a request is sent to the subManager server. Ex: http://127.0.0.1:8000/en.srt
+    //Return the subtitle when a request is sent to the subManager server. Ex: http://127.0.0.1:3550/en.srt
     manager.server.on('request', function(request, response) {
         var u = url.parse(request.url);
 
@@ -45,11 +45,9 @@ var subManager = function()
 
     //Load subtitle into the subManager
     manager.setSubtitles = function(value, cb) {
-        var subToken;
         manager.title = value;
         openSubs.api.login().done(
             function(token){
-                subToken = token;
                 openSubs.api.search(token, "all", value).done(
                     function(results){
                         for(var i=0; i < results.length; i++)
@@ -80,6 +78,7 @@ var subManager = function()
         );
 
         openSubs.api.on("error", function(e){
+            console.log(e);
             cb(false);
         });
     }
@@ -100,7 +99,7 @@ var subManager = function()
         return;
     }
 
-    //Download a specific subtitle
+    //Decode a specific subtitle Iconv-lite is fucking awesome
     manager.decode = function(data, ISO639) {
         console.log(ISO639);
         var charsetData = charset.detect(data);
