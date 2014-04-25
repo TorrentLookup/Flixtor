@@ -23,6 +23,10 @@ var localization = function() {
             lang : "Basque",
             encoding : [ "iso-8859-1", "windows-1252" ]
         },
+        "pb" : {
+            lang : "Brazillian",
+            encoding : [ "iso-8859-1" ]
+        },
         "bg" : {
             lang : "Bulgarian",
             encoding : [ "iso-8859-5" ]

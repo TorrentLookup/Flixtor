@@ -8,6 +8,7 @@ var fs = require('fs');
 var charset = require('jschardet');
 var iconv = require('iconv-lite');
 var main = require('../js/main.js');
+var localization = require('../js/localization.js');
 
 var subManager = function()
 {
@@ -32,11 +33,11 @@ var subManager = function()
         var sub = manager.get(filename);
         if(sub.isDownloaded) {
             if(sub.data) {
-                response.end(manager.decode(sub.data));
+                response.end(manager.decode(sub.data, sub.ISO639));
             }
         }else {
             sub.download(function (data) {
-                response.end(manager.decode(data));
+                response.end(manager.decode(data, sub.ISO639));
             });
         }
     });
@@ -100,10 +101,22 @@ var subManager = function()
     }
 
     //Download a specific subtitle
-    manager.decode = function(data) {
+    manager.decode = function(data, ISO639) {
+        console.log(ISO639);
         var charsetData = charset.detect(data);
         var detecdedEncoding = charsetData.encoding;
         var targetEncoding = "utf8";
+        console.log(detecdedEncoding);
+        //Iconv-lite is not detecting the good encoding for certain language like pt-br (WTF I get IBM855 when choosing brazillian :O)
+        if(detecdedEncoding == "IBM855" || detecdedEncoding == "windows-1250" || detecdedEncoding == "windows-1251" || detecdedEncoding == "windows-1252" || detecdedEncoding == "windows-1254" || detecdedEncoding == "windows-1255") {
+            if(ISO639) {
+                var lang = localization().languages[ISO639];
+                if(lang) {
+                    detecdedEncoding = lang.encoding[0]; //We take the true real encoding now!
+                    console.log(detecdedEncoding);
+                }
+            }
+        }
 
         //We don't need to convert UTF-8
         if(detecdedEncoding != "utf-8") {
