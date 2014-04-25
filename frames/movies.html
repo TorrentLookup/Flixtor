@@ -253,6 +253,13 @@
 
                         function showDetails(movieId) {
                             $("#movieContainer").append("<div class='spinner-overlay'></div>");
+
+                            var url = "http://www.torrentlookup.com/Services/v4/services/mediaservices/MediaDataService.svc/Movies("+movieId+")/SpokenLanguages?$format=json";
+                            var spokenLanguage = "";
+                            $.getJSON( url, function( data ) {
+                                spokenLanguage = data.d.results[0].Name;
+                            });
+
                             $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres", function(data) {
 
                                 movie = data.d;
@@ -265,6 +272,13 @@
                                 $.each(movie.Genres.results, function(index, value) {
                                     $("#mdGenres").append(value.Name + " ");
                                 });
+
+                                if( spokenLanguage !== "" || movie.Runtime !== "" ){
+                                    $("#mdInfo").append("Language: "+spokenLanguage+" - Runtime: "+movie.Runtime+" min");
+                                }
+                                else {
+                                    $("#mdInfo").remove();
+                                }
 
                                 $("#btnPlayMovie").click(function() {
                                     $("#divMD").addClass("hide");
@@ -388,6 +402,9 @@
                                                     </div>
                                                     <div class="p-5">
                                                         <div id="mdGenres">
+
+                                                        </div>
+                                                        <div id="mdInfo">
 
                                                         </div>
                                                         <div class="p-5">
