@@ -45,7 +45,7 @@ videojs.FontColor.prototype.onClick = function() {
 var createFontColorButton = function() {
     var props = {
         className: 'vjs-fontcolor-button vjs-menu-button vjs-control',
-        innerHTML: '<div class="vjs-control-content"><span class="vjs-control-text">Set font color</span></div><div class="vjs-menu"><ul class="vjs-menu-content"><li class="vjs-menu-item" data-val="#ffffff">White</li><li class="vjs-menu-item" data-val="#ffff00">yelow</li><li class="vjs-menu-item" data-val="#ff0000">red</li><li class="vjs-menu-item" data-val="rainbow">rainbow</li></ul></div>',
+        innerHTML: '<div class="vjs-control-content"><span class="vjs-control-text">Set font color</span></div><div class="vjs-menu"><ul class="vjs-menu-content"><li class="vjs-menu-item" data-val="#ffffff">White</li><li class="vjs-menu-item" data-val="#ffff00">yellow</li><li class="vjs-menu-item" data-val="#ff0000">red</li><li class="vjs-menu-item" data-val="rainbow">rainbow</li></ul></div>',
         role: 'button'
     };
     return videojs.Component.prototype.createEl(null, props);
