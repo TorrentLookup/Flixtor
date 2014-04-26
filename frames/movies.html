@@ -269,6 +269,7 @@
                                 $("#mdBackdrop").attr('src', "http://image.tmdb.org/t/p/original/" + movie.BackdropPath);
                                 $("#mdOverview").text(movie.Overview);
                                 $("#mdGenres").empty();
+                                $("#mdInfo").empty();
                                 $.each(movie.Genres.results, function(index, value) {
                                     $("#mdGenres").append(value.Name + " ");
                                 });
