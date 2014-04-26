@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
     <head>
         <title>Flixtor</title>
         <!-- CSS -->
@@ -42,7 +41,7 @@
                 //Persistence
                 if(sessionStorage.movie) {
                     var movie = $.parseJSON(sessionStorage.movie);
-                    showDetails(movie.MovieId);
+                    //showDetails(movie.MovieId);
                 }
             });
         </script>
@@ -76,7 +75,6 @@
     <body>
         <div id="wrapper">
             <div id="top-bar">
-                <div class="top-titlebar-text">Flixtor</div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -86,6 +84,7 @@
                 <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
             <div id="content-wrapper">
                 <div id="side-bar-full" class="hidden-xs side-bar">
@@ -153,17 +152,13 @@
                                 $(results.Movies).each(function(index) {
                                     var movie = $(this)[0];
 
-                                    content += "<div class='element transition m-10 isotope-item' style='-webkit-box-shadow: 0 8px 6px -6px black; position: relative;                      border:thin solid black;'>" +
-                                        "<a class='shadow' onClick='showDetails(" + movie.MovieId + ")'>" +
+                                    content += "<div class='element transition m-10 isotope-item'>" +
+                                        "<a class='shadow' onClick='showDetails(" + movie.MovieId + ");'>" +
                                         "<img alt='image' src='http://image.tmdb.org/t/p/w185" + movie.PosterPath + "/>' style='width:160px; height:230px;'>" +
                                         "</a>" +
-                                        "<div style='position:absolute; top:10px; width:100%'>" +
-                                        "<button type='button' class='btn btn-xs btn-success pull-right' onClick='playMovieTopTorrent(" + movie.MovieId + ")' style='-webkit-border-radius: 3px 0 0 3px;'>" +
-                                        "<i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button>" +
-                                        "</div>" +
-                                        "<div style='position:absolute; top:175px; background:rgba(0,0,0,0.8); border-top:thin solid black; width:100%; padding:5px;                            color:white'>" +
+                                        "<div class='p-5' style='max-width:160px;'>" +
                                         "<div style='font-size:14px;'>" + movie.Title + "</div>" +
-                                        "<div style='font-size:10px; color:#E8E8E8;'>" + movie.Genres + "</div>" +
+                                        "<div style='font-size:10px; color:#A8A8A8;'>" + movie.Genres + "</div>" +
                                         "</div>" +
                                         "<div style='clear:both'></div>" +
                                         "</div>";
@@ -177,7 +172,13 @@
                                     $container.isotope('destroy');
                                     $container.isotope({
                                         itemSelector: '.element',
-                                        animationEngine: 'jquery'
+                                        animationEngine: 'jquery',
+                                        layoutMode: 'fitRows',
+                                        animationOptions: {
+                                            duration: 600,
+                                            easing: 'linear',
+                                            queue: false
+                                        }
                                     });
                                 } else {
                                     content = "<span class='p-10 ml-20 font-24' style='color:#D5D5D5;'>No results found</span>";
@@ -186,6 +187,10 @@
 
                             });
 
+                        }
+
+                        function showDetails(movieId) {
+                            window.location = "movie.html?movieId=" + movieId;
                         }
 
                         function changeSearchText() {
@@ -243,49 +248,6 @@
                             applySearch();
                         }
 
-                        function showDetails(movieId) {
-                            //Display spinner while we wait for data
-                            $("#movieContainer").append("<div class='spinner-overlay'></div>");
-
-                            $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres", function(data) {
-
-                                var movie = data.d;
-                                $("#mdTitle").text(movie.Title);
-                                $("#mdBigTitle").text(movie.Title);
-                                $("#mdPoster").attr('src', "http://image.tmdb.org/t/p/w150/" + movie.PosterPath);
-
-                                if(movie.BackdropPath)
-                                    $("#mdBackdrop").attr('src', "http://image.tmdb.org/t/p/original/" + movie.BackdropPath);
-
-                                $("#mdOverview").text(movie.Overview);
-
-                                $("#mdGenres").empty();
-                                $.each(movie.Genres.results, function(index, value) {
-                                    $("#mdGenres").append(value.Name + " ");
-                                });
-
-                                //Assign click event for playing the movie :D
-                                $("#btnPlayMovie").click(function() {
-                                    $("#divMD").addClass("hide");
-                                    playMovieTopTorrent(movie.MovieId);
-                                });
-
-                                //Assign click event for trailer
-                                $("#btnPlayTrailer").click(function() {
-                                    $("#divMD").addClass("hide");
-                                    playTrailer();
-                                });
-
-                                //Keep the movie in a session
-                                sessionStorage.setItem('movie', JSON.stringify(movie));
-
-                                $("#divMD").removeClass("hide");
-
-                                //Remove spinner since we got the data we need.
-                                $(".spinner-overlay").remove();
-                            });
-                        }
-
                         function playMovieTopTorrent(movieId) {
                             $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent&$orderby=Torrent/Seeds%20desc&$top=1&$format=json", function(data) {
                                 if (data.d[0]) {
@@ -323,7 +285,9 @@
                                     <div class="input-group">
                                         <input id="txtMovieSearch" type="text" class="form-control black-input" placeholder="Movie title...">
                                         <span class="input-group-btn">
-                                            <button class="btn btn-default" id="btnSearchMovie" type="button" onclick="changeSearchText();">Search</button>
+                                            <button class="btn btn-default" id="btnSearchMovie" type="button" onclick="changeSearchText();">
+                                                <span class="glyphicon glyphicon-search"></span>
+                                            </button>
                                             <span class="ml-10">
                                                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Genres
                                                     <span id="filterByGenre"> : Any</span>
@@ -367,70 +331,11 @@
                         <div id="movieContainer" class="isotope" style="overflow-y:auto !important; margin-right:10px;">
                             <!-- Dynamic content here-->
                         </div>
-
                     </div>
                     <div id="popup"></div>
-                    <div id="divMD" class="hide">
-                        <div id="bufferModel" class="modal fade in show">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <button type="button" class="close" onclick="closeMovie();">
-                                            <span class="glyphicon glyphicon-remove"></span>
-                                        </button>
-                                        <span>Details of</span>
-                                        <span id="mdTitle"></span>
-                                    </div>
-                                    <div>
-
-                                        <div style="height: 200px; overflow: hidden; border-bottom: thin solid #b9b9b9; float: left; text-align: center;">
-                                            <img id="mdBackdrop" alt="Backdrop" src="" class="width-100">
-                                        </div>
-                                        <div style="float: left; margin-top: -125px;" class="ml-20">
-                                            <img id="mdPoster" alt="Poster" src="" class="img-box-contour" width="150">
-                                        </div>
-                                        <div class="float-clear"></div>
-                                        <div style="margin-top: -100px;">
-                                            <div style="margin-left: 190px;">
-                                                <div class="pr-10">
-                                                    <div class="header">
-                                                        <h1 id="mdBigTitle"></h1>
-                                                    </div>
-                                                    <div class="p-5">
-                                                        <div id="mdGenres">
-
-                                                        </div>
-                                                        <div class="p-5">
-                                                            <div id="mdGenres">
-
-                                                            </div>
-                                                            <div class="mt-5">
-                                                                <button id="btnPlayMovie" class="btn btn-xs btn-success" title="Play the torrent with the most seeds">
-                                                                    <i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play movie</button>
-                                                                <button id="btnPlayTrailer" class="btn btn-xs btn-primary" title="Play the trailer">
-                                                                    <i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Watch trailer</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="pl-20 pr-20 pb-10">
-                                                <div>
-                                                    <h2>Plot</h2>
-                                                    <p id="mdOverview" style="line-height: 14px;">
-
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-backdrop fade in"></div>
-                    </div>
                 </div>
             </div>
-        </body>
+        </div>
+    </body>
 
-    </html>
+</html>

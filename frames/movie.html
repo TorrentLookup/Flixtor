@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
+
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
+
+        <!-- Modules -->
+        <script>
+            var main = require('../js/main.js');
+            var callwcf = require('../js/callwcf.js');
+            var utilities = require('../js/utilities.js');
+
+            main.reloadInstance();
+            callwcf.reloadInstance();
+
+            $(document).ready(function() {
+                //Get movie details
+                //Display spinner while we wait for data
+                $("#content-wrapper").append("<div class='spinner-overlay'></div>");
+
+                var movieId = utilities.getQueryString('movieId');
+                if(movieId) {
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers", function(data) {
+                        var movie = data.d;
+                        console.log(movie);
+                        //Insert backdrop path
+                        $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + movie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
+
+                        //Set variables to html
+                        $("#poster").attr('src', 'http://image.tmdb.org/t/p/w300' + movie.PosterPath);
+                        $("#title").html(movie.Title);
+
+                        var genres = movie.Genres.results;
+                        for(var i=0; i < genres.length; i++)
+                        {
+                            $("#genres").append(genres[i].Name);
+
+                            if(i < (genres.length - 1)) {
+                                $("#genres").append(", ");
+                            }
+                        }
+
+                        var trailers = movie.Trailers.results;
+                        if(trailers.length > 0) {
+                            $("#btnTrailer").click(function () {
+                                window.location.href = "trailer.html?youtubeId=" +trailers[0].Source;
+                            });
+                        }else {
+                            $("#btnTrailer").addClass("hide");
+                        }
+
+
+                        $("#plot").html(movie.Overview);
+                        $("#runtime").append(movie.Runtime + "m");
+                        $("#date").append(new Date(movie.ReleaseDate.match(/\d+/)[0] * 1).toDateString());
+
+                        //Keep the movie in a session
+                        sessionStorage.setItem('movie', JSON.stringify(movie));
+
+                        //Remove spinner since we got the data we need.
+                        $(".spinner-overlay").remove();
+                    });
+                }
+            });
+        </script>
+    </head>
+
+    <body>
+        <div id="customCSS"></div>
+        <div id="wrapper">
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
+            </div>
+            <div id="content-wrapper">
+                <div id="content">
+                    <script type="text/javascript">
+                        function playMovieTopTorrent(movieId) {
+                            $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent&$orderby=Torrent/Seeds%20desc&$top=1&$format=json", function(data) {
+                                if (data.d[0]) {
+                                    var torrent = data.d[0].Torrent;
+                                    main.playTorrent(torrent.Info_Hash);
+                                } else
+                                    main.showMessage('Error', 'Unable to download the torrent.');
+                            });
+                        }
+                    </script>
+
+                    <div id="movie" class="modal fade in show p-30">
+
+                        <div class="container center-block">
+                            <div class="row">
+                                <div class="col-sm-3 hidden-sm hidden-xs">
+                                    <img id="poster" alt="" src="" width="200" class="img-responsive img-thumbnail"  /></div>
+                                <div class="col-sm-9" style="padding:10px;">
+                                    <a class="pull-right font-24 color-white" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                                    <h1 id="title"></h1>
+                                    <h4 id="genres"></h4>
+                                    <div id="plot" class="ptb-10" style="max-width:800px;"></div>
+                                    <div class="ptb-10">
+                                        <button id="btnPlay" class="btn btn-success btn-sm"><i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button>
+                                        <button id="btnTrailer" class="btn btn-primary btn-sm"><i class='glyphicon glyphicon-film'></i>&nbsp;&nbsp;Trailer</button>
+                                    </div>
+                                    <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>
+                                    <div id="date" class="pt-5"><span class="glyphicon glyphicon-calendar"></span>&nbsp;&nbsp;</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop fade in" style="opacity:0.85;"></div>
+                </div>
+            </div>
+        </body>
+    </html>

@@ -39,7 +39,6 @@
     <body onclick="main.reloadInstance();">
         <div id="wrapper">
             <div id="top-bar">
-                <div class="top-titlebar-text">Flixtor</div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -49,6 +48,7 @@
                 <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
             <div id="content-wrapper">
                 <div id="side-bar-full" class="hidden-xs side-bar">
@@ -283,9 +283,9 @@
                         <div class="row" style="margin-right:0;">
                             <div class="col-lg-9">
                                 <div class="input-group">
-                                    <input id="txtTorrentSearch" type="text" class="form-control" placeholder="Torrent name...">
+                                    <input id="txtTorrentSearch" type="text" class="form-control black-input" placeholder="Torrent name...">
                                     <span class="input-group-btn">
-                                        <button class="btn btn-primary" type="button" id="btnSearchTorrent" onclick="changeSearchText();">Search</button>
+                                        <button class="btn btn-default" type="button" id="btnSearchTorrent" onclick="changeSearchText();">Search</button>
                                         <span class="ml-10">
                                             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter by
                                                 <span id="filterByStatus"></span>

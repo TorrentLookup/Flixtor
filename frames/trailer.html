@@ -1,29 +1,54 @@
-<script type="text/javascript">
-    function closeTrailer()
-    {
-        //Remove dialog
-        $('#trailerModelWrapper').remove();
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
 
-        //Check persistence
-        if(sessionStorage.movie)
-            $("#divMD").removeClass("hide");
-    }
-</script>
-<div id="trailerModelWrapper">
-    <div id="trailerModel" class="modal fade in show">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" onclick="closeTrailer();">
-                        <span class="glyphicon glyphicon-remove"></span>
-                    </button>
-                    Trailer of <span id="trailerModalTitle"></span>
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
+
+        <!-- Modules -->
+        <script>
+            var main = require('../js/main.js');
+            var callwcf = require('../js/callwcf.js');
+            var utilities = require('../js/utilities.js');
+
+            main.reloadInstance();
+            callwcf.reloadInstance();
+
+            $(document).ready(function() {
+                var youtubeId = utilities.getQueryString('youtubeId');
+                if(youtubeId) {
+                    $("#video-container").html("<iframe id='trailerPlayer' type='text/html' width='100%' src='https://www.youtube.com/embed/" + youtubeId + "?autoplay=1&rel=0&showinfo=0&iv_load_policy=3' frameborder='0'></iframe>");
+                }
+
+                $(window).resize(function () {
+                    $("iframe").css("height", $(window).height() - 41);
+                }).trigger("resize");
+            });
+        </script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
                 </div>
-                <div id="trailerContent" class="m-5">
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
                 </div>
-                <div class="clearfix"></div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade in"></div>
-</div>
+            <div id="content-wrapper">
+                <div id="video-container">
+                </div>
+            </div>
+        </body>
+    </html>

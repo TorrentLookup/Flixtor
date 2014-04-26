@@ -74,7 +74,6 @@
     <body>
         <div id="wrapper">
             <div id="top-bar">
-                <div class="top-titlebar-text">Flixtor</div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -84,6 +83,7 @@
                 <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
             <div id="content-wrapper">
                 <div id="side-bar-full" class="hidden-xs side-bar">
@@ -153,11 +153,11 @@
                                     } else {
                                         posterPath = "http://image.tmdb.org/t/p/w185" + serie.PosterPath;
                                     }
-                                    content += "<div class='element transition m-10 isotope-item' style='-webkit-box-shadow: 0 8px 6px -6px black; position:relative; border:thin solid black;'>" +
+                                    content += "<div class='element transition m-10 isotope-item'>" +
                                         "<a class='shadow' onClick='showDetails(" + serie.SerieId + ", false)'>" +
                                         "<img alt='image' src='" + posterPath + "' style='width:160px; height:230px;'/>" +
                                         "</a>" +
-                                        "<div style='position:absolute; top:175px; background:rgba(0,0,0,0.8); border-top:thin solid black; width:100%; padding:5px;color:white'>" +
+                                        "<div class='p-5' style='max-width:160px;'>" +
                                         "<div style='font-size:14px;'>" + serie.Name + "</div>" +
                                         "<div style='font-size:10px; color:#E8E8E8;'>" + serie.Genres + "</div>" +
                                         "</div>" +
@@ -173,8 +173,14 @@
                                     var $container = $("#serieContainer");
                                     $container.isotope('destroy');
                                     $container.isotope({
-                                        itemSelector: ".element",
-                                        animationEngine: "jquery"
+                                        itemSelector: '.element',
+                                        animationEngine: 'jquery',
+                                        layoutMode: 'fitRows',
+                                        animationOptions: {
+                                            duration: 600,
+                                            easing: 'linear',
+                                            queue: false
+                                        }
                                     });
                                 } else {
                                     //Nothing was found!!

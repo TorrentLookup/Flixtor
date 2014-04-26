@@ -229,6 +229,19 @@ var getSubManager = function () {
     return subManager;
 }
 
+function toggleFullScreen() {
+    if (win.isFullscreen) {
+        win.leaveFullscreen();
+    } else {
+        win.enterFullscreen();
+    }
+    win.focus();
+}
+
+function minimize() {
+    win.minimize();
+}
+
 
 var updateLoader = function (downloaded, total, downloadSpeed) {
     var status = (downloaded * 100) / total;
@@ -245,8 +258,8 @@ var setProgress = function (status, downloadSpeed)
 }
 
 //Inject html frame into index.html and change the sidebar menu
-var changeFrame = function (frameName) {
-    window.location = frameName + ".html";
+var changeFrame = function (frame) {
+    window.location = frame + ".html";
 }
 
 //Disable file drop over
@@ -284,6 +297,8 @@ var getPlatform = function() {
 win.focus();
 
 //Exports
+module.exports.minimize = minimize;
+module.exports.toggleFullScreen = toggleFullScreen;
 module.exports.stopDownload = stopDownload;
 module.exports.stopPlayer = stopPlayer;
 module.exports.closeApp = closeApp;
@@ -295,6 +310,7 @@ module.exports.NA = NA;
 module.exports.getEngine = getEngine;
 module.exports.getSubManager = getSubManager;
 
+/*
 process.on('uncaughtException', function (err) {
     console.error('An uncaughtException was found, the program will end.');
 
@@ -312,3 +328,4 @@ process.on('uncaughtException', function (err) {
         process.exit(1);
     }, 6000);
 });
+*/
