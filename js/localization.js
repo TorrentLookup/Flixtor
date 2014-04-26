@@ -1,8 +1,6 @@
-var localization = function() {
+var Localization = function() {
 
-    var localizator = {};
-
-    localizator.languages = {
+    this.languages = {
         "af" : {
             lang : "Afrikaans",
             encoding : [ "iso-8859-1", "windows-1252" ]
@@ -192,8 +190,6 @@ var localization = function() {
             encoding : [ "iso-8859-5" ]
         }
     }
-
-    return localizator;
 }
 
-module.exports = localization;
+module.exports = new Localization();

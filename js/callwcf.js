@@ -1,5 +1,5 @@
 var $ = window.$;
-var main = require('../js/main.js');
+var utilities = require('../js/utilities.js');
 
 //External functions
 var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, sortReverse, sortTypeId, randomSort, randomSeed, skip, max, callback) {
@@ -42,7 +42,7 @@ var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, s
             callback(jsonResult);
             }catch(error)
             {
-                main.showMessage("Error","Flixtor services are unavailable at the moment, please try again later. You can follow us on facebook to find out when the service will be online. <a target='blank' href='http://www.facebook.com/flixtorapp'>http://www.facebook.com/flixtorapp</a>");
+                utilities.showMsg("Error","Flixtor services are unavailable at the moment, please try again later. You can follow us on facebook to find out when the service will be online. <a target='blank' href='http://www.facebook.com/flixtorapp'>http://www.facebook.com/flixtorapp</a>");
                 callback("error");
             }
         });

@@ -9,6 +9,8 @@
         <script>
             var gui = window.require('nw.gui');
             var win = gui.Window.get();
+            var utilities = require('../js/utilities.js');
+
             var main = require('../js/main.js');
             var engine = main.getEngine();
             var subManager = main.getSubManager();
@@ -21,7 +23,7 @@
                         return;
                     }
 
-                    $("#top-stats").html(main.bytes(engine.swarm.downloaded) + " - " + main.bytes(engine.swarm.downloadSpeed()) + "/s");
+                    $("#top-stats").html(utilities.toBytes(engine.swarm.downloaded) + " - " + utilities.toBytes(engine.swarm.downloadSpeed()) + "/s");
                 }
 
                 setInterval(stats, 1000);
@@ -77,12 +79,12 @@
             <script>
                 //Load available subtitles for the current torrent (movie, serie, anime & etc..)
                 if(subManager) {
-                    if(subManager.list)
+                    if(subManager.hasSubtitles)
                     {
                         for(var i = 0; i < subManager.list.length; i++)
                         {
                             var subtitle = subManager.list[i];
-                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.ISO639 + ".srt' srclang='" + subtitle.ISO639 + "' label='" + subtitle.languageName + "' />");
+                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.iso639 + ".srt' srclang='" + subtitle.iso639 + "' label='" + subtitle.languageName + "' />");
                         }
 
                         //Initialize videojs with buttons for subtitles

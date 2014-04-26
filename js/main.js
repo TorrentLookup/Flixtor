@@ -1,30 +1,28 @@
-//Modules
-var numeral = require('numeral');
+//External modules
 var address = require('network-address');
 var http = require('http');
 var fs = require('fs');
-var gunzip = require('zlib').createGunzip();
 var peerflix = require('peerflix');
 var request = require('request');
 var gui = window.require('nw.gui');
 var win = gui.Window.get();
-var requestManager = require('request'), zlib = require('zlib');
+var requestManager = require('request');
 var $ = window.$;
-var zlib = require('zlib');
-var openSubs = require('opensubtitles-client');
 var path = require('path');
-var url = require('url');
-var subManager = require('../js/subtitleManager.js');
+var NA = require('nodealytics');
 
-//Google analytics tracking
-var NA = require("nodealytics");
+//Internal modules
+var subtitle = require('../js/subtitle.js');
+var utilities = require('../js/utilities.js');
+var localization = require('../js/localization.js');
+
+//Global variables
+var engine, subManager, enginePort, subPort;
+var serverFlag;
+
 //NA.initialize('UA-42435534-2', 'www.flixtor.com', function () {});
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
-var engine, sub, enginePort, subPort;
-var serverFlag;
-
-//External functions
 var playTorrent = function (infoHash) {
     var torrent;
     serverFlag = false;
@@ -75,16 +73,14 @@ var playTorrent = function (infoHash) {
     engine.on('ready', function() {
         console.log(engine.torrent);
         console.log(engine.tracker);
-        sub = subManager();
 
-        sub.setSubtitles(engine.torrent.name, function (success) {
+        subManager = subtitle(subPort);
+        subManager.searchSubtitles(engine.torrent.name, function (success) {
             if(!success)
                 engine.skipSubtitles = true;
 
             engine.langFound = success;
         });
-
-        sub.server.listen(subPort);
     });
 
     engine.server.on('listening', function () {
@@ -109,7 +105,7 @@ var playTorrent = function (infoHash) {
 
             });
 
-            console.log(bytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
+            console.log(utilities.toBytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
 
             if (!swarm._destroyed) {
                 setTimeout(statsLog, 500);
@@ -139,7 +135,7 @@ var playTorrent = function (infoHash) {
                     {
                         if(!engine.skipSubtitles) {
                             $("#btnSubtitleSkip").addClass("hide");
-                            $("#bufferModalStatus").html(sub.list.length + " subtitles found.");
+                            $("#bufferModalStatus").html(subManager.list.length + " subtitles found.");
                         }
 
                         if(!serverFlag)
@@ -202,8 +198,8 @@ var stopDownload = function () {
                 engine.server.listen(0);
                 engine.server.close();
 
-                if(sub)
-                    sub.server.close();
+                if(subManager)
+                    subManager.server.close();
             }catch (e)
             {
                 console.log(e);
@@ -230,12 +226,9 @@ var getEngine = function() {
 }
 
 var getSubManager = function () {
-    return sub;
+    return subManager;
 }
 
-var bytes = function (num) {
-    return numeral(num).format('0.0b').toLowerCase();
-};
 
 var updateLoader = function (downloaded, total, downloadSpeed) {
     var status = (downloaded * 100) / total;
@@ -248,7 +241,7 @@ var setProgress = function (status, downloadSpeed)
 {
     $(".progress-bar").css("width", Math.round(status) + "%");
     $("#progress-bar-count").text(Math.round(status) + "%");
-    $("#progress-bar-status").text(bytes(downloadSpeed));
+    $("#progress-bar-status").text(utilities.toBytes(downloadSpeed));
 }
 
 //Inject html frame into index.html and change the sidebar menu
@@ -256,29 +249,7 @@ var changeFrame = function (frameName) {
     window.location = frameName + ".html";
 }
 
-//Use this to pop an alert message over the application
-var showMessage = function (title, html) {
-    $('#popup').html("<div id='messageModalWrapper'>" +
-                     "<div id='messageModal' class='modal fade in show'>" +
-                     "<div class='modal-dialog'>" +
-                     "<div class='modal-content'>" +
-                     "<div class='modal-header'>" +
-                     "<button type='button' class='close' onclick='$(\"#messageModalWrapper\").remove();'>" +
-                     "<span class='glyphicon glyphicon-remove'></span>" +
-                     "</button>" +
-                     "<span>" + title + "</span>" +
-                     "</div>" +
-                     "<div class='m-10'>" + html +
-                     "</div>" +
-                     "<div class='clearfix'></div>" +
-                     "</div>" +
-                     "</div>" +
-                     "</div>" +
-                     "<div class='modal-backdrop fade in'></div>" +
-                     "</div>");
-}
-
-//Disable file drap over
+//Disable file drop over
 window.addEventListener("dragover", function (e) {
     e = e || event;
     e.preventDefault();
@@ -298,77 +269,21 @@ window.addEventListener("dragstart", function (e) {
 
 win.on("loaded", function (e) {
     //Check for internet connection on startup
-    checkInternetConnection(function (hasInternetAccess) {
-        if (!hasInternetAccess) {
-            showMessage("No internet access", "<span>You don't have access to internet, please check your connection and try again.</span>");
+    utilities.hasInternetConnection(function (hasInternet) {
+        if (!hasInternet) {
+            utilities.showMsg("No internet access", "<span>You don't have access to internet, please check your connection and try again.</span>");
         }
     });
 });
 
-var checkInternetConnection = function (callback) {
-    http.get("http://www.google.com/", function (res) {
-        if (res.statusCode == 200 || res.statusCode == 302 || res.statusCode == 301) {
-            callback(true);
-        }
-    }).on('error', function (e) {
-        callback(false);
-    });
-};
-
-function toggleFullScreen() {
-    if (win.isFullscreen) {
-        win.leaveFullscreen();
-    } else {
-        win.enterFullscreen();
-    }
-    win.focus();
+var getPlatform = function() {
+    return process.platform;
 }
 
-function minimize() {
-    win.minimize();
-}
-
-//Focus the app on startup
+//Force the app to focus on startup
 win.focus();
 
-var headers = {
-    "accept-charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.3",
-    "accept-language": "en-US,en;q=0.8",
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2",
-    "accept-encoding": "gzip,deflate",
-};
-
-var requestWithEncoding = function (url, callback) {
-    var req = request.get(url);
-
-    req.on('response', function (res) {
-        var chunks = [];
-        res.on('data', function (chunk) {
-            chunks.push(chunk);
-        });
-
-        res.on('end', function () {
-            var buffer = Buffer.concat(chunks);
-            var encoding = res.headers['content-encoding'];
-
-                zlib.gunzip(buffer, function (err, decoded) {
-                    callback(err, decoded);
-                });
-
-        });
-    });
-
-    req.on('error', function (err) {
-        callback(err, null);
-    });
-}
-
 //Exports
-module.exports.checkInternetConnection = checkInternetConnection;
-module.exports.minimize = minimize;
-module.exports.toggleFullScreen = toggleFullScreen;
-module.exports.showMessage = showMessage;
 module.exports.stopDownload = stopDownload;
 module.exports.stopPlayer = stopPlayer;
 module.exports.closeApp = closeApp;
@@ -378,19 +293,17 @@ module.exports.reloadInstance = reloadInstance;
 module.exports.$ = $;
 module.exports.NA = NA;
 module.exports.getEngine = getEngine;
-module.exports.bytes = bytes;
 module.exports.getSubManager = getSubManager;
-module.exports.requestWithEncoding = requestWithEncoding;
 
 process.on('uncaughtException', function (err) {
     console.error('An uncaughtException was found, the program will end.');
 
     //Logging with google analytics
     //If internet connection is available we log the error
-    checkInternetConnection(function (hasInternetAccess) {
-        if (hasInternetAccess) {
+    utilities.checkInternetConnection(function (hasInternet) {
+        if (hasInternet) {
             NA.trackEvent('FlixtorApp', 'Error Occured', err.message + " -> " + err.stack, function (err, resp) {});
-            showMessage('Error', 'An uncaughtException was found and an error report has been sent to improve future versions of Flixtor.<br> The program will end.');
+            utilities.showMsg('Error', 'An uncaughtException was found and an error report has been sent to improve future versions of Flixtor.<br> The program will end.');
         }
     });
 
