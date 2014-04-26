@@ -41,7 +41,7 @@
                 //Persistence
                 if(sessionStorage.serie){
                     var serie = $.parseJSON(sessionStorage.serie);
-                    showDetails(serie.SerieId , true);
+                    //showDetails(serie.SerieId , true);
                 }
             });
         </script>
@@ -153,8 +153,9 @@
                                     } else {
                                         posterPath = "http://image.tmdb.org/t/p/w185" + serie.PosterPath;
                                     }
+
                                     content += "<div class='element transition m-10 isotope-item'>" +
-                                        "<a class='shadow' onClick='showDetails(" + serie.SerieId + ", false)'>" +
+                                        "<a class='shadow' onClick='showDetails(" + serie.SerieId + ");'>" +
                                         "<img alt='image' src='" + posterPath + "' style='width:160px; height:230px;'/>" +
                                         "</a>" +
                                         "<div class='p-5' style='max-width:160px;'>" +
@@ -202,6 +203,10 @@
                             //Hide view episodes panel and start the torrent
                             $("#divSD").addClass("hide");
                             main.playTorrent(infoHash);
+                        }
+
+                        function showDetails(serieId) {
+                            window.location.href = "serie.html?serieId=" + serieId;
                         }
 
                         function changeFilterGenre(name) {
@@ -257,50 +262,6 @@
                             serieApplySearch();
                         }
 
-                        function showDetails(serieId, showEpisodes) {
-                            //Display spinner while waiting for serie details. Don't display it if we only want to see episodes.
-                            if(!showEpisodes) {
-                                $('#serieContainer').append("<div class='spinner-overlay'></div>");
-                            }
-
-                            $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Series(" + serieId + ")?$format=json&$expand=Genres", function(data) {
-                                var serie = data.d;
-
-                                //Assign serie values to html
-                                var posterPath = ""
-                                if (serie.PosterPath == null) {
-                                    posterPath = "../images/no-poster.png";
-                                } else {
-                                    posterPath = "http://image.tmdb.org/t/p/w185" + serie.PosterPath;
-                                }
-                                $("#sdTitle").text(serie.Name);
-                                $("#sdBigTitle").text(serie.Name);
-                                $("#sdPoster").attr("src", posterPath);
-                                $("#sdBackdrop").attr("src", "http://image.tmdb.org/t/p/original/" + serie.BackdropPath);
-                                $("#sdOverview").text(serie.Overview);
-
-                                $("#sdGenres").empty();
-                                $.each(serie.Genres.results, function(index, value) {
-                                    $("#sdGenres").append(value.Name + " ");
-                                });
-
-                                //Keep the serie in sessions
-                                sessionStorage.setItem('serie', JSON.stringify(serie));
-
-                                if(showEpisodes)
-                                {
-                                    viewEpisodes();
-                                }else {
-                                    $("#divSD").removeClass("hide");
-                                    $("#serieDetailsModal").removeClass("hide");
-                                    $("#serieEpisodesModal").addClass("hide");
-
-                                    //Remove the spinner since we got the details
-                                    $(".spinner-overlay").remove();
-                                }
-                            });
-                        }
-
                         //View episodes of the current serie in session
                         function viewEpisodes() {
                             var serie = $.parseJSON(sessionStorage.serie);
@@ -332,19 +293,6 @@
                             $("#divSD").removeClass("hide");
                             $("#serieDetailsModal").addClass("hide");
                             $("#serieEpisodesModal").removeClass("hide");
-                        }
-
-                        function closeSerie()
-                        {
-                            $("#serieDetailsModal").addClass("hide");
-                            $("#divSD").addClass("hide");
-                            sessionStorage.removeItem('serie');
-                        }
-
-                        function closeEpisodes()
-                        {
-                            $("#serieDetailsModal").removeClass("hide");
-                            $("#serieEpisodesModal").addClass("hide");
                         }
                     </script>
 
@@ -400,79 +348,6 @@
                         <!-- Dynamic content here -->
                     </div>
                     <div id="popup"></div>
-                    <div id="divSD" class="hide">
-                        <div id="serieModal" class="modal fade in show">
-                            <div id="serieDetailsModal" class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <button type="button" class="close" onclick="closeSerie();">
-                                            <span class="glyphicon glyphicon-remove"></span>
-                                        </button>
-                                        <span>Details of</span>
-                                        <span id="sdTitle"></span>
-                                    </div>
-                                    <div style="max-height:550px;overflow:auto !important;">
-
-                                        <div style="height: 200px; overflow: hidden; border-bottom: thin solid #b9b9b9; float: left; text-align: center;" class="width-100">
-                                            <img id="sdBackdrop" alt="" src="http://image.tmdb.org/t/p/original/35657JZSn1MlRjty9AgmqvpyraY.jpg" class="width-100">
-                                        </div>
-                                        <div style="float: left; margin-top: -125px;" class="ml-20">
-                                            <img id="sdPoster" alt="" src="http://image.tmdb.org/t/p/w150/gLYPbbJSNPGj1wJDpef5d59hyVl.jpg" class="img-box-contour" width="150">
-                                        </div>
-                                        <div class="float-clear"></div>
-                                        <div style="margin-top: -100px;">
-                                            <div style="margin-left: 190px;">
-                                                <div class="pr-10">
-                                                    <div class="header">
-                                                        <h1 id="sdBigTitle"></h1>
-                                                    </div>
-                                                    <div class="p-5">
-                                                        <div id="sdGenres">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="p-20">
-                                                <button class="btn btn-sm btn-primary" onclick="viewEpisodes()">View episodes</button>
-                                                <div>
-                                                    <h2>Plot</h2>
-                                                    <p id="sdOverview" style="line-height: 14px;">
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="serieEpisodesModal" class="modal-dialog hide">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <button type="button" class="close" onclick="closeEpisodes();">
-                                            <span class="glyphicon glyphicon-remove"></span>
-                                        </button>
-                                        <span>Episodes of</span>
-                                        <span id="sdeTitle"></span>
-                                    </div>
-                                    <div class="p-20" style="max-height:500px;overflow-y:auto !important;">
-                                        <table class="table-normal table-header-left table-align-middle width-100">
-                                            <thead>
-                                                <tr>
-                                                    <th>Episode name</th>
-                                                    <th>Episode number</th>
-                                                    <th>Season number</th>
-                                                    <th></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="episodeContainer">
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-backdrop fade in"></div>
-                    </div>
                 </div>
             </div>
         </body>

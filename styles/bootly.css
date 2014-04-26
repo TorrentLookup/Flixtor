@@ -402,3 +402,15 @@ div.spinner-overlay {
     background-repeat: no-repeat;
     background-size:40px;
 }
+
+.stars-template {
+    background: url('../images/tiny-star.png');
+    height: 14px;
+    width: 69px;
+}
+
+.current-rating {
+    background: url('../images/tiny-star-filled.png');
+    height: 14px;
+    width: 72.45%;
+}

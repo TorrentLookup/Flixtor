@@ -26,7 +26,7 @@
 
                 var movieId = utilities.getQueryString('movieId');
                 if(movieId) {
-                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers", function(data) {
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers,SimilarMovies", function(data) {
                         var movie = data.d;
                         console.log(movie);
                         //Insert backdrop path
@@ -37,8 +37,7 @@
                         $("#title").html(movie.Title);
 
                         var genres = movie.Genres.results;
-                        for(var i=0; i < genres.length; i++)
-                        {
+                        for(var i=0; i < genres.length; i++) {
                             $("#genres").append(genres[i].Name);
 
                             if(i < (genres.length - 1)) {
@@ -55,10 +54,22 @@
                             $("#btnTrailer").addClass("hide");
                         }
 
+                        $("#rating").attr("style", "width:" + (movie.VoteAverage * 10) + "% !important");
 
                         $("#plot").html(movie.Overview);
                         $("#runtime").append(movie.Runtime + "m");
                         $("#date").append(new Date(movie.ReleaseDate.match(/\d+/)[0] * 1).toDateString());
+
+                        var similarMovies = movie.SimilarMovies.results;
+                        if(similarMovies.length > 0) {
+                            for(var i=0; i < similarMovies.length; i++) {
+                                $("#similarMovies").append(similarMovies[i].Title + "<br/>");
+
+                                if(i == 4) {
+                                    break;
+                                }
+                            }
+                        }
 
                         //Keep the movie in a session
                         sessionStorage.setItem('movie', JSON.stringify(movie));
@@ -109,7 +120,10 @@
                                 <div class="col-sm-9" style="padding:10px;">
                                     <a class="pull-right font-24 color-white" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                                     <h1 id="title"></h1>
-                                    <h4 id="genres"></h4>
+                                    <h4 id="genres" class="mr-10" style="display:inline-block;"></h4>
+                                    <div class="stars-template" style="display:inline-block;">
+                                        <div id="rating" class="current-rating"></div>
+                                    </div>
                                     <div id="plot" class="ptb-10" style="max-width:800px;"></div>
                                     <div class="ptb-10">
                                         <button id="btnPlay" class="btn btn-success btn-sm"><i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button>
@@ -117,6 +131,8 @@
                                     </div>
                                     <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>
                                     <div id="date" class="pt-5"><span class="glyphicon glyphicon-calendar"></span>&nbsp;&nbsp;</div>
+                                    <h4>Similar movies</h3>
+                                    <div id="similarMovies"></div>
                                 </div>
                             </div>
                         </div>
