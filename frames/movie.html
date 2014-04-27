@@ -54,6 +54,10 @@
                             $("#btnTrailer").addClass("hide");
                         }
 
+                        $("#btnPlay").click(function () {
+                            window.location.href = "/frames/players/movie-player.html?movieId=" + movieId;
+                        });
+
                         $("#rating").attr("style", "width:" + (movie.VoteAverage * 10) + "% !important");
 
                         $("#plot").html(movie.Overview);
@@ -99,20 +103,7 @@
             </div>
             <div id="content-wrapper">
                 <div id="content">
-                    <script type="text/javascript">
-                        function playMovieTopTorrent(movieId) {
-                            $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent&$orderby=Torrent/Seeds%20desc&$top=1&$format=json", function(data) {
-                                if (data.d[0]) {
-                                    var torrent = data.d[0].Torrent;
-                                    main.playTorrent(torrent.Info_Hash);
-                                } else
-                                    main.showMessage('Error', 'Unable to download the torrent.');
-                            });
-                        }
-                    </script>
-
                     <div id="movie" class="modal fade in show p-30">
-
                         <div class="container center-block">
                             <div class="row">
                                 <div class="col-sm-3 hidden-sm hidden-xs">

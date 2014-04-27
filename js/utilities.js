@@ -41,10 +41,8 @@ var Utilities = function () {
         return numeral(num).format('0.0b').toLowerCase();
     }
 
-    this.getQueryString = function (key)
-    {
+    this.getQueryString = function (key) {
         var url = window.location.search.substring(1);
-        console.log(url);
         var querystrings = url.split('&');
         for (var i = 0; i < querystrings.length; i++) {
             var keys = querystrings[i].split('=');
