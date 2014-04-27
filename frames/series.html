@@ -47,16 +47,16 @@
                 $("#txtSerieSearch").bind('keyup paste', function() {
                     clearTimeout($(this).data('timeout'));
                     $(this).data('timeout', setTimeout(function(){
-                            var movieSearchValue = $('#txtSerieSearch').val();
+                        var movieSearchValue = $('#txtSerieSearch').val();
 
-                            if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
-                                    console.log(movieSearchValue);
-                                    $("#btnSearchSerie").text('Play');
-                                }
-                            else {
-                                    $("#btnSearchSerie").text('Search');
-                                }
-                        }, 200));
+                        if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                            $("#btnSearchSerie").text('Play');
+                        }
+                        else {
+                            $( "#btnSearchSerie" ).empty();
+                            $("#btnSearchSerie").append('<span class="glyphicon glyphicon-search"></span>');
+                        }
+                    }, 200));
                 });
             });
         </script>
@@ -323,7 +323,9 @@
                                 <div class="input-group">
                                     <input id="txtSerieSearch" type="text" class="form-control black-input" placeholder="Serie title or magnet link...">
                                     <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="btnSearchSerie" onclick="changeSearchText();">Search</button>
+                                        <button class="btn btn-default" type="button" id="btnSearchSerie" onclick="changeSearchText();">
+                                            <span class="glyphicon glyphicon-search"></span>
+                                        </button>
                                         <span class="ml-10">
                                             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Genres
                                                 <span id="filterByGenre">: Any</span>

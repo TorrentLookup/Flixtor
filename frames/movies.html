@@ -47,16 +47,16 @@
                 $("#txtMovieSearch").bind('keyup paste', function() {
                     clearTimeout($(this).data('timeout'));
                     $(this).data('timeout', setTimeout(function(){
-                            var movieSearchValue = $('#txtMovieSearch').val();
+                        var movieSearchValue = $('#txtMovieSearch').val();
 
-                                    if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
-                                    console.log(movieSearchValue);
-                                    $("#btnSearchMovie").text('Play');
-                                }
-                            else {
-                                    $("#btnSearchMovie").text('Search');
-                                }
-                        }, 200));
+                        if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                            $("#btnSearchMovie").text('Play');
+                        }
+                        else {
+                            $( "#btnSearchMovie" ).empty();
+                            $("#btnSearchMovie").append('<span class="glyphicon glyphicon-search"></span>');
+                        }
+                    }, 200));
                 });
 
             });
