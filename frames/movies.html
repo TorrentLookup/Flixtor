@@ -43,6 +43,22 @@
                     var movie = $.parseJSON(sessionStorage.movie);
                     //showDetails(movie.MovieId);
                 }
+
+                $("#txtMovieSearch").bind('keyup paste', function() {
+                    clearTimeout($(this).data('timeout'));
+                    $(this).data('timeout', setTimeout(function(){
+                            var movieSearchValue = $('#txtMovieSearch').val();
+
+                                    if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                                    console.log(movieSearchValue);
+                                    $("#btnSearchMovie").text('Play');
+                                }
+                            else {
+                                    $("#btnSearchMovie").text('Search');
+                                }
+                        }, 200));
+                });
+
             });
         </script>
 
@@ -195,7 +211,13 @@
 
                         function changeSearchText() {
                             movieFilter.searchValue = $('#txtMovieSearch').val();
-                            applySearch();
+                            if(movieFilter.searchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                                var infoHash = movieFilter.searchValue.split('magnet:?xt=urn:btih:');
+                                main.playTorrent(infoHash[1], 'movies');
+                            }
+                            else {
+                                applySearch();
+                            }
                         }
 
                         function changeFilterGenre(name) {
@@ -283,7 +305,7 @@
                             <div class="row" style="margin-right:0;">
                                 <div class="col-lg-10">
                                     <div class="input-group">
-                                        <input id="txtMovieSearch" type="text" class="form-control black-input" placeholder="Movie title...">
+                                        <input id="txtMovieSearch" type="text" class="form-control black-input" placeholder="Movie title or magnet link...">
                                         <span class="input-group-btn">
                                             <button class="btn btn-default" id="btnSearchMovie" type="button" onclick="changeSearchText();">
                                                 <span class="glyphicon glyphicon-search"></span>
