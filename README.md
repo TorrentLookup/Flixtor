@@ -5,10 +5,12 @@ Flixtor streams movies, series, videos and animes from Torrents.
 Based with the peerflix module and mixed with services from TorrentLookup. All of this packaged with node-webkit in order to deliver the ultimate windows, mac and linux app.
 
 ## Screenshot
-![Alt text](http://www.flixtor.com/img/app-flixtor.jpg  "Flixtor - Movie section")
+![Alt text](https://cloud.githubusercontent.com/assets/7190299/2809153/5d77b354-cd5c-11e3-8cb4-22e319a08a02.png  "Flixtor - Movie section")
+![Alt text](https://cloud.githubusercontent.com/assets/7190299/2809158/8a8f9d0c-cd5c-11e3-85d9-c4aafa5155b0.png  "Flixtor - Movie detail")
+![Alt text](https://cloud.githubusercontent.com/assets/7190299/2824785/1a3e8cdc-cf39-11e3-970e-c24af0e13535.png  "Flixtor - Serie player")
 
 ## Latest build
-Flixtor Beta 1.3
+Flixtor 1.0.0
 
 ## Websites
 [Flixtor](http://www.flixtor.com)  

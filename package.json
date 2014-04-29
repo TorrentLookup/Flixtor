@@ -2,7 +2,7 @@
     "main": "app://host/frames/movies.html",
     "name": "Flixtor",
     "description": "Movie and serie streamer",
-    "version": "0.1.5",
+    "version": "1.0.0",
     "window": {
         "title": "Flixtor",
         "icon": "images/flixtor-ico.png",
