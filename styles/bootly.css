@@ -12,7 +12,7 @@ a {
 
 #content-wrapper
 {
-    margin-top: 40px;
+    margin-top: 38px;
 }
 
 /* Top bar */
@@ -160,8 +160,8 @@ a {
 /* Tables */
 .table-light th{font-weight:bold;padding:5px 10px;border-bottom:thin solid #ccc;}
 .table-light td{padding:5px;}
-.table-normal th{padding:5px 10px;border-bottom:thin solid rgba(0,0,0,0.2); font-weight: normal;}
-.table-normal td{padding:5px;color:#c7c7c7}
+.table-normal th{padding:5px 10px; font-weight: normal;}
+.table-normal td{padding:2px;color:#c7c7c7}
 .table-box{border:thin solid #ccc;padding:5px;}
 .table-box th{font-weight:bold;padding:10px;border-bottom:1px dashed #ccc;}
 .table-box td{padding:5px;border-bottom:1px solid #e6e6e6;}

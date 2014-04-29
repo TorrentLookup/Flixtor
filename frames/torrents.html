@@ -37,6 +37,71 @@
     </head>
 
     <body onclick="main.reloadInstance();">
+        <style>
+            .nav-tabs > li > a {
+                margin-right: 2px;
+                line-height: 1.428571429;
+                border: 1px solid transparent;
+                color: #C4C4C4;
+            }
+
+            .nav >li > a {
+                position: relative;
+                display: block;
+                padding: 5px 10px;
+            }
+
+            .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+                color: #E4E4E4;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: 1px solid transparent;
+                cursor: default;
+            }
+
+            .nav-tabs>li > a:hover, .nav-tabs > li > a:focus {
+                color: #E4E4E4;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: 1px solid transparent;
+                cursor: pointer;
+            }
+
+            .nav-tabs {
+                border-bottom: 1px solid #8992A2;
+            }
+
+            .pagination {
+                display: inline-block;
+                padding-left: 0;
+                margin: 20px 0;
+                border-radius: 4px;
+            }
+
+            .pagination>li:first-child>a, .pagination>li:first-child>span {
+                margin-left: 0;
+                border-bottom-left-radius: 4px;
+                border-top-left-radius: 4px;
+            }
+
+            .pagination>.active>a, .pagination>.active>span, .pagination>.active>a:hover, .pagination>.active>span:hover, .pagination>.active>a:focus, .pagination>.active>span:focus {
+                z-index: 2;
+                color: #fff;
+                background-color: rgba(0, 0, 0, 0.61);
+                border-color: transparent;
+                cursor: default;
+            }
+
+            .pagination>li>a, .pagination>li>span {
+                position: relative;
+                float: left;
+                padding: 6px 12px;
+                line-height: 1.428571429;
+                text-decoration: none;
+                color: #D6D6D6;
+                background-color: rgba(0, 0, 0, 0.35);
+                border: transparent;
+                margin-left: -1px;
+            }
+        </style>
         <div id="wrapper">
             <div id="top-bar">
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
@@ -232,7 +297,7 @@
 
                         function resetSkipMax() {
                             torrentSkip = 0;
-                            torrentMax = 12;
+                            torrentMax = 14;
                         }
 
                         function applySearch() {
@@ -261,8 +326,8 @@
                                                                     "<div style='padding-top:4px'>" +
                                                                     "   <button type='button' class='btn btn-xs btn-success pull-left mb-5 mr-5' onclick=\"main.playTorrent('" + torrent.Info_Hash + "')\">" +
                                                                     "      <i class='glyphicon glyphicon-play'></i>&nbsp;Play</button>" +
-                                                                    //                                    " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
-                                                                    //                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +
+                                                                    " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
+                                                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +
                                                                     "</div>" +
                                                                     "<div class='clearfix'></div>" +
                                                                     "</td>" +
@@ -285,7 +350,9 @@
                                 <div class="input-group">
                                     <input id="txtTorrentSearch" type="text" class="form-control black-input" placeholder="Torrent name...">
                                     <span class="input-group-btn">
-                                        <button class="btn btn-default" type="button" id="btnSearchTorrent" onclick="changeSearchText();">Search</button>
+                                        <button class="btn btn-default" type="button" id="btnSearchTorrent" onclick="changeSearchText();">
+                                            <span class="glyphicon glyphicon-search"></span>
+                                        </button>
                                         <span class="ml-10">
                                             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter by
                                                 <span id="filterByStatus"></span>
@@ -324,7 +391,7 @@
                         </div>
                         <div id="torrents" style="overflow-y:auto !important;">
                             <div class="mr-10">
-                                <ul id="categoryMenu" class="nav nav-tabs mt-10">
+                                <ul id="categoryMenu" class="nav nav-tabs mt-20">
                                     <li id="linkAnime">
                                         <a onclick="changeCategory('anime');">Anime</a>
                                     </li>
@@ -339,7 +406,7 @@
                                     </li>
                                 </ul>
 
-                                <table class="table-normal table-header-left table-align-middle width-100">
+                                <table class="table-normal table-header-left table-align-middle mt-5 width-100">
                                     <thead>
                                         <tr>
                                             <th>Torrent Name</th>

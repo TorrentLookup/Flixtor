@@ -12,7 +12,7 @@
         "height": 770,
         "position": "center",
         "min_width": 640,
-        "min_height": 480
+        "min_height": 600
     },
     "webkit": {
         "plugin": true

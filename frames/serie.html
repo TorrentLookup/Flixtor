@@ -95,11 +95,16 @@
 
                         $("#rating").attr("style", "width:" + (serie.VoteAverage * 10) + "% !important");
 
+                        $("#btnPlay").click(function () {
+                            window.location.href = "/frames/players/serie-player.html?serieId=" + serieId;
+                        });
+
                         //Keep the movie in a session
                         sessionStorage.setItem('serie', JSON.stringify(serie));
 
                         //Remove spinner since we got the data we need.
                         $(".spinner-overlay").remove();
+                        $("#serie").addClass("show");
                     });
                 }
             });
@@ -123,17 +128,17 @@
             </div>
             <div id="content-wrapper">
                 <div id="content">
-                    <div id="serie" class="modal fade in show p-30">
+                    <div id="serie" class="modal fade in p-30">
                         <div class="container center-block">
                             <div class="row">
-                                <div class="col-sm-3 hidden-sm hidden-xs">
+                                <div class="col-sm-3 hidden-xs">
                                     <img id="poster" alt="" src="" width="200" class="img-responsive img-thumbnail"  />
                                     <div class="p-5 font-12">
                                         <div id="status"></div>
                                         <div id="inProduction"></div>
                                     </div>
                                 </div>
-                                <div class="col-sm-9" style="padding:10px;">
+                                <div class="col-sm-9 p-10">
                                     <a class="pull-right font-24 color-white" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                                     <h1 id="title"></h1>
                                     <h4 id="genres" class="mr-10" style="display:inline-block;"></h4>
