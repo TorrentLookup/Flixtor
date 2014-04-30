@@ -4,29 +4,53 @@
     <head>
         <title>Player</title>
         <!-- Javascripts -->
-        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="/js/extensions/jquery.min.js"></script>
+
         <!-- Modules -->
         <script>
             var gui = window.require('nw.gui');
             var win = gui.Window.get();
             var utilities = require('../js/utilities.js');
+            var address = require('network-address');
 
             var main = require('../js/main.js');
             var engine = main.getEngine();
             var subManager = main.getSubManager();
 
-            $( document ).ready(function() {
-                var stats = function ()
-                {
-                    if(!engine) {
-                        clearInterval(stats);
-                        return;
-                    }
+            $(document).ready(function() {
+                $("#wrapper").append("<div class='spinner-overlay'></div>");
+                var torrentId = utilities.getQueryString('torrentId');
+                console.log(torrentId);
+                if(torrentId) {
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/Torrents(" + torrentId + ")?$expand=Files", function(data) {
+                        var torrent = data.d;
+                        console.log(torrent);
+                        $("#torrent-modal-title").html(torrent.Name);
+                        $("#torrent-modal-seeds").html(torrent.Seeds);
+                        $("#torrent-modal-leechs").html(torrent.Leechs);
+                        $("#torrent-modal-filecount").html(torrent.FileCount);
+                        $("#torrent-modal-totalsize").html(torrent.FormattedSize);
 
-                    $("#top-stats").html(utilities.toBytes(engine.swarm.downloaded) + " - " + utilities.toBytes(engine.swarm.downloadSpeed()) + "/s");
+                        $("#info-torrent-name").html(torrent.Name);
+
+                        var files = torrent.Files.results;
+                        for(var i=0; i < files.length; i++) {
+                            var file = files[i];
+
+                            var sourceId = (i + 1);
+                            $("#files").append("<tr><td>" + file.Name + "</td><td>" + file.FormattedSize + "</td></tr>");
+                        }
+
+
+                        $("#btnPlayDefault").click(function () {
+                            playTorrent(torrent.Info_Hash);
+                        });
+
+                        $("#torrent").addClass("show");
+                        $(".spinner-overlay").remove();
+                    });
                 }
 
-                setInterval(stats, 1000);
             });
 
             var setSubConfig = function(config)
@@ -42,204 +66,286 @@
                 }
             }
 
+            function playTorrent (infoHash) {
+                main.stopDownload();
+
+                $("#loader").removeClass("hide");
+                $("#torrent-modal").addClass("hide");
+
+                setTimeout(function () {
+                    main.playTorrent(infoHash);
+                    var engine = main.getEngine();
+
+                    var started = Date.now();
+                    var wires = engine.swarm.wires;
+                    var swarm = engine.swarm;
+
+                    engine.server.on('listening', function () {
+                        if (!engine.server.address())
+                            return;
+
+                        var port = engine.server.address().port;
+                        console.log(port);
+
+                        var href = 'http://' + address() + ':' + port + '/';
+
+                        console.log('server is listening on ' + href);
+
+                        var minimum = 5242880; //1.5mb
+
+                        var videoReadyId;
+                        var isVideoReady = function () {
+                            if (swarm.downloaded > minimum) {
+                                $(".progress-bar").css("width", "100%");
+                                $("#progress-bar-count").text("100%");
+                                console.log("Ready!");
+                                clearInterval(videoReadyId);
+
+                                //Show the video player
+                                setTimeout(function () {
+                                    $("#loader").addClass("hide");
+                                    $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+
+                                    var video = videojs("torrentVideo");
+
+                                    video.on('error', function(event){
+                                        //Remove default player
+                                        $('#torrentVideo').remove();
+
+                                        //Show error message
+                                        $("#error").removeClass("hide");
+                                    });
+
+                                    video.ready(function() {
+                                        this.play(); //Play the video when the movie is ready
+                                    });
+
+                                }, 500);
+                            } else {
+                                console.log("Not ready yet!");
+                                if (swarm.downloaded != 0) {
+                                    var status = (swarm.downloaded * 100) / minimum;
+                                    $(".progress-bar").css("width", Math.round(status) + "%");
+                                    $("#progress-bar-count").text(Math.round(status) + "%");
+                                } else {
+                                    if(!swarm._destroyed) {
+                                        if(swarm.queued > 0) {
+                                            $("#status").html("Connecting [" + swarm.queued + "]");
+                                        }
+                                    } else {
+                                        clearInterval(videoReadyId);
+                                        resetBuffer();
+                                    }
+                                }
+                            }
+                        }
+
+                        videoReadyId = setInterval(isVideoReady, 500);
+
+                        var downloadId;
+                        var isDownloading = function () {
+                            if (swarm.downloaded != 0) {
+                                clearInterval(downloadId);
+                                $("#status").html("Buffering");
+                                $("#right-nav").removeClass("hide");
+                            }
+
+                            if (swarm._destroyed) {
+                                clearInterval(downloadId);
+                            }
+                        }
+
+                        downloadId = setInterval(isDownloading, 500);
+                    });
+
+
+
+                    engine.on('ready', function() {
+                        setInterval(displayEngineInfo, 1000);
+                    });
+
+                }, 2000);
+            }
+
+            function closeDownload() {
+                main.stopDownload();
+                window.history.back();
+            }
+
+            function displayEngineInfo() {
+                var engine = main.getEngine();
+                var swarm = engine.swarm;
+                $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
+                $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
+                $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
+            }
+
+            function startVLC() {
+                $('#torrentVideo').remove();
+                $("#video-container").html("<embed type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px; z-index:-10000;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+            }
         </script>
 
         <!-- Styles -->
-        <link href="../styles/video-skin.css" rel="stylesheet">
-        <link href="../styles/bootstrap.min.css" rel="stylesheet">
-        <link href="../styles/bootly.css" rel="stylesheet">
-        <link href="../styles/videojs.errors.css" rel="stylesheet">
+        <link href="/styles/video-skin.css" rel="stylesheet">
+        <link href="/styles/bootstrap.min.css" rel="stylesheet">
+        <link href="/styles/bootly.css" rel="stylesheet">
     </head>
 
-    <body style="margin:0; overflow:hidden;">
+    <body>
         <div id="customCSS"></div>
-        <div id="wrapper" class="">
+        <style>
+            #source-content li {
+                padding: 0;
+            }
+            #source-content li a {
+                cursor: pointer;
+                display: block;
+                padding: 8px 10px;
+                text-decoration: none;
+                color: #e9e9e9;
+            }
+            #source-content li:hover, #source-content li .on {
+                background-color: rgba(10,10,10,0.7);
+                border-left:3px solid #e9e9e9;
+            }
+
+            #top-nav li a {
+                text-decoration: none;
+                color: #424242;
+            }
+
+            #top-nav li a:hover, #top-nav li a.on {
+                text-decoration: none;
+                color: #e9e9e9 !important;
+            }
+        </style>
+        <div id="wrapper">
             <div id="top-bar">
-                <div class="top-titlebar-text">Flixtor</div>
-                <div id="top-stats" style="position:absolute; text-align:center; width:100%; top:6px"></div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
                 <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
                     <span class="glyphicon glyphicon-fullscreen"></span>
                 </div>
-                <div class="top-titlebar-close-button" onclick="main.stopPlayer(1);" title="Stop player">
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
                     <span class="glyphicon glyphicon-remove"></span>
                 </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
-
-            <script type="text/javascript" src="../js/extensions/video.js"></script>
-            <div id="video-container" style="width:100%; height:100%;">
-                <video id="torrentVideo" class="video-js vjs-default-skin" height="100%" width="100%" controls="controls">
-                    <source src="http://127.0.0.1:3549" type='video/mp4' />
-                </video>
+            <div id="torrent" class="modal fade in" style="top:0;">
+                <div id="torrent-modal" class="container center-block" style="margin-top:100px; max-width:700px;">
+                    <h3 id="torrent-modal-title" class="pull-left" style="max-width:600px;"></h3>
+                    <a class="pull-right font-24 color-white mt-20" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                    <div class="clearfix"></div>
+                    <div class="pull-left">
+                        <span id="torrent-modal-seeds" class="text-success font-16"></span> are uploading.<br>
+                        <span id="torrent-modal-leechs" class="text-danger font-16"></span> are downloading.<br>
+                        <span id="torrent-modal-filecount" class="font-16"></span> files.</div>
+                    <span id="torrent-modal-totalsize" class="font-20 pull-right"></span>
+                    <div class="clearfix"></div>
+                    <button id="btnPlayDefault" class="pull-left btn btn-xs btn-success mt-10">Play default file</button>
+                    <div class="clearfix"></div>
+                    <table id="files" class="mt-10 table-normal table-header-left width-100">
+                        <thead>
+                            <tr>
+                                <th>File name</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div id="error" class="container center-block hide" style="margin-top:300px; max-width:500px;">
+                    <h4>An error has occured</h4>
+                    <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
+                    <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
+                    <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                </div>
+                <div id="loader" class="container center-block hide" style="margin-top:350px; max-width:500px;">
+                    <h4 id="status">Connecting</h4>
+                    <div class="progress progress-striped active" style="margin-bottom:0;">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                            <div class="ml-5">
+                                <span id="progress-bar-count">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h5 id="current-source" class="pull-left"></h5>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                </div>
+                <div id="right-nav" class="hidden-xs hidden-sm hide" style="position:absolute; top:40px; z-index:1; background: rgba(0,0,0,0.5); bottom:0; width:250px; right:0; border-left:thin solid black">
+                    <div style="margin:10px 10px 0 10px;">
+                        <a class="pull-right font-18 color-white" onclick="closeDownload();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                        <h3 id="title"></h3>
+                        <ul id="top-nav" class="list-inline">
+                            <li><a id="btnShowInfo" class="on">Info</a></li>
+                        </ul>
+                    </div>
+                    <div id="nav-content">
+                        <div id="info-content" style="margin:0 10px;">
+                            <h6 id="info-torrent-name" style="word-break:break-all;"></h6>
+                            File selected <div id="info-torrent-file" class="font-12">asdfa asdfasdf asdf</div>
+                            <ul class="list-unstyled font-12" style="padding:0; margin:5px 0 0 0;">
+                                <li><i class='glyphicon glyphicon-hdd'></i>&nbsp;&nbsp;<span id="info-torrent-size"></span></li>
+                                <li><i class='glyphicon glyphicon-download text-success'></i>&nbsp;&nbsp;<span id="info-downloaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
+                            </ul>
+                            <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                            <div class="font-12 mt-5">No sound is playing from the video? You can try switching to VLC.</div>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript" src="/js/extensions/video.js"></script>
+                <div id="video-container" style="width:100%; height:100%;">
+                </div>
+                <script type="text/javascript" src="/js/videojsButtons.js"></script>
+                <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
             </div>
-            <script type="text/javascript" src="../js/videojsButtons.js"></script>
-            <script type="text/javascript" src="../js/extensions/videojs.errors.js"></script>
-            <script>
-                //Load available subtitles for the current torrent (movie, serie, anime & etc..)
-                if(subManager) {
-                    if(subManager.hasSubtitles)
-                    {
-                        for(var i = 0; i < subManager.list.length; i++)
-                        {
-                            var subtitle = subManager.list[i];
-                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.iso639 + ".srt' srclang='" + subtitle.iso639 + "' label='" + subtitle.languageName + "' />");
-                        }
-
-                        //Initialize videojs with buttons for subtitles
-                        var video = videojs("torrentVideo", {
-                            plugins : { fontcolor : {}, fontsize : {} }
-                        });
-
-                        //Load size and color default config -- Initialize subtitles config
-                        subManager.loadConfig(); //Get config values from localSettings
-                        setSubConfig(subManager.config); //Apply changes to the player
-
-                        //Set selected style to the buttons
-                        $(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
-                        $(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
-
-                    }
-                }else {
-                    //Initialize the default videojs
-                    var video = videojs("torrentVideo");
-                }
-
-                //Check for errors
-                video.errors({
-                    messages: {
-                    }
-                });
-
-                //When the video is ready play it automatically
-                video.ready(function() {
-                    this.play();
-                });
-            </script>
+            <div class="modal-backdrop fade in" style="opacity:0.3;"></div>
         </div>
-        <script>
-            //Fullscreen with player
-            $(".vjs-fullscreen-control").click(function () {
-                if(win.isFullscreen) {
-                    $("#torrentVideo").removeClass("vjs-fullscreen");
-                }
-                else {
-                    $("#torrentVideo").addClass("vjs-fullscreen");
-                }
 
-                win.toggleFullscreen();
-            });
+        <!--        <script>
+//Load available subtitles for the current torrent (movie, serie, anime & etc..)
+if(subManager) {
+if(subManager.hasSubtitles)
+{
+for(var i = 0; i < subManager.list.length; i++)
+{
+var subtitle = subManager.list[i];
+$("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.iso639 + ".srt' srclang='" + subtitle.iso639 + "' label='" + subtitle.languageName + "' />");
+}
 
-            //Hide top bar & bottom if mouse is idle
-            var timeout, mX, mY;
-            $("body").mousemove(function( event ) {
-                //If mouse is hovering the top menu than keep it open
-                if($("#top-bar").is(":hover")) {
-                    clearTimeout(timeout);
-                    return;
-                }
+//Initialize videojs with buttons for subtitles
+var video = videojs("torrentVideo", {
+plugins : { fontcolor : {}, fontsize : {} }
+});
 
-                //Mouse is moving
-                if(mX !== event.pageX && mY !== event.pageY) {
-                    mX = event.pageX;
-                    mY = event.pageY;
+//Load size and color default config -- Initialize subtitles config
+subManager.loadConfig(); //Get config values from localSettings
+setSubConfig(subManager.config); //Apply changes to the player
 
-                    if($("#top-bar").is(":hidden")) {
-                        $("#top-bar").slideDown();
-                        $(".vjs-control-bar").removeClass("vjs-fade-out").addClass("vjs-fade-in");
-                        $("body").css("cursor","");
-                    }
-                }
+//Set selected style to the buttons
+$(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
+$(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
 
-                clearTimeout(timeout);
+}
+}else {
+//Initialize the default videojs
+var video = videojs("torrentVideo");
+}
 
-                //Mouse is idle
-                timeout = setTimeout(function() {
-                    $("#top-bar").slideUp();
-                    $(".vjs-control-bar").removeClass("vjs-fade-in").addClass("vjs-fade-out");
-                    $("body").css("cursor","none");
-                }, 3000);
-            });
+//Check for errors
+video.errors({
+messages: {
+}
+});
 
-            //Set font size
-            $(".vjs-fontsize-button .vjs-menu-item").click(function () {
-                if(subManager)
-                {
-                    //Get the size
-                    var size = $(this).data('val');
-
-                    //Set size in sub config
-                    subManager.config.size = size;
-
-                    //Apply the style
-                    setSubConfig(subManager.config);
-                    $(".vjs-fontsize-button .vjs-menu-item").removeClass("vjs-selected");
-                    $(this).addClass("vjs-selected");
-
-                    //Save config for persistence
-                    subManager.saveConfig();
-                }
-            });
-
-            //Set font color
-            $(".vjs-fontcolor-button .vjs-menu-item").click(function () {
-                if(subManager)
-                {
-                    //Get the color.
-                    var color = $(this).data('val');
-
-                    //Set the color in the sub config.
-                    subManager.config.color = "" + color + "";
-
-                    //Apply the config to the style.
-                    setSubConfig(subManager.config);
-                    $(".vjs-fontcolor-button .vjs-menu-item").removeClass("vjs-selected");
-                    $(this).addClass("vjs-selected");
-
-                    //Save the config for next use. (Persistence)
-                    subManager.saveConfig();
-                }
-            });
-
-            // Keyboard events
-            $(document).off('keydown.playercontrol').on('keydown.playercontrol', function(e) {
-                if (e.preventDefault) e.preventDefault();
-                var key = e.keyCode;
-                switch (key) {
-                        // esc
-                    case 27:
-                        if(win.isFullscreen) {
-                            win.leaveFullscreen();
-                        }
-                        break;
-                        // F
-                    case 70:
-                        win.toggleFullscreen();
-                        break;
-                        //backspace
-                    case 8:
-                        win.reload();
-                        break;
-                        //Space
-                    case 32:
-                        if(video.paused()) {
-                            video.play();
-                        }else{
-                            video.pause();
-                        }
-                        break;
-                        //m
-                    case 77:
-                        if(video.muted()) {
-                            video.muted(false);
-                        }else{
-                            video.muted(true);
-                        }
-                        break;
-                }
-            });
-        </script>
+//When the video is ready play it automatically
+video.ready(function() {
+this.play();
+});
+</script>-->
     </body>
-
 </html>

@@ -300,6 +300,10 @@
                             torrentMax = 14;
                         }
 
+                        function viewTorrent(torrentId) {
+                            window.location.href = "players/player.html?torrentId=" + torrentId;
+                        }
+
                         function applySearch() {
                             $("#wrapper").append("<div class='spinner-overlay'></div>");
                             if (!torrentSelectedValueCategory) {
@@ -324,10 +328,10 @@
                                                                     "<td>" + torrent.AddedDate + "</td>" +
                                                                     "<td>" +
                                                                     "<div style='padding-top:4px'>" +
-                                                                    "   <button type='button' class='btn btn-xs btn-success pull-left mb-5 mr-5' onclick=\"main.playTorrent('" + torrent.Info_Hash + "')\">" +
-                                                                    "      <i class='glyphicon glyphicon-play'></i>&nbsp;Play</button>" +
-                                                                    " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
-                                                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +
+                                                                    "   <button type='button' class='btn btn-xs btn-default pull-left mb-5 mr-5' onclick='viewTorrent(" + torrent.TorrentId + ");'>" +
+                                                                    "      <i class='glyphicon glyphicon-list-alt'></i>&nbsp;Details</button>" +
+               /*                                                     " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
+                                                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +*/
                                                                     "</div>" +
                                                                     "<div class='clearfix'></div>" +
                                                                     "</td>" +
