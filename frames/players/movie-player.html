@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Movie player</title>
+        <!-- Javascripts -->
+        <script type='text/javascript' src="/js/extensions/jquery.min.js"></script>
+        <!-- Styles -->
+        <!--        <link href="/styles/video-skin.css" rel="stylesheet">-->
+        <link href="/styles/bootstrap.min.css" rel="stylesheet">
+        <link href="/styles/bootly.css" rel="stylesheet">
+        <link href="/styles/videojs.errors.css" rel="stylesheet">
+        <link href="/styles/video-skin.css" rel="stylesheet">
+
+        <script type="text/javascript">
+            var gui = window.require('nw.gui');
+            var win = gui.Window.get();
+            var utilities = require('../js/utilities.js');
+            var address = require('network-address');
+
+            var main = require('../js/main.js');
+
+            $(document).ready(function() {
+                $("#wrapper").append("<div class='spinner-overlay'></div>");
+                var movieId = utilities.getQueryString('movieId');
+                if(movieId) {
+
+                    //Get movie information
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers,SimilarMovies", function(data) {
+                        var movie = data.d;
+                        console.log(movie);
+                        //Insert backdrop path
+                        if(movie.BackdropPath) {
+                            $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + movie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
+                        }
+
+                        $("#title").html(movie.Title);
+                    });
+
+                    //Get movie torrents
+                    $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent,MediaResolution,MediaType&$orderby=Torrent/Seeds%20desc&$top=10&$format=json", function(data) {
+                        if (data.d[0]) {
+                            var torrents = data.d;
+                            console.log(torrents);
+                            for(var i=0; i < torrents.length; i++) {
+                                var torrent = torrents[i].Torrent;
+
+                                var type = "";
+                                if(torrents[i].MediaType) {
+                                    type = torrents[i].MediaType.Name;
+                                }
+
+                                var vlc = "";
+                                if(torrent.Name.toLowerCase().indexOf("xvid") > -1) {
+                                    vlc = "<span class='glyphicon glyphicon-exclamation-sign font-14 text-warning'></span>&nbsp;&nbsp;VLC";
+                                }
+
+                                var sourceId = (i + 1);
+                                $("#source-content").append("<li><a id='source-" + sourceId + "' class='source' title='" + torrent.Name + "' data-infohash='" + torrent.Info_Hash + "' data-source='" + sourceId + "' '><span>Source " + sourceId + "</span><span class='pull-right'>" + torrent.FormattedSize + "</span><div class='clear-fix'></div><span class='pull-left'>" + vlc + " " + type + "</span><div class='text-right'></span><span class='text-success'>" + torrent.Seeds + "</span> / <span class='text-danger'>" + torrent.Leechs + "</span></div></a></li>");
+                            }
+
+                            $(".source").click(function () {
+                                //Reset hover style
+                                $(".source").removeClass("on");
+
+                                //Set hover style
+                                $(this).addClass("on");
+
+                                //Remove video
+                                $('#torrentVideo').remove();
+
+
+                                $("#loader").removeClass("hide");
+
+                                //Play the actual torrent
+                                var infoHash = $(this).data("infohash");
+                                var sourceId = $(this).data("source");
+                                playTorrent(infoHash);
+                                $("#current-source").html("Loading from source " + sourceId);
+
+                                //Get torrent info
+                                for(var i=0; i < torrents.length; i++) {
+                                    if(torrents[i].Torrent.Info_Hash == infoHash) {
+                                        torrent = torrents[i].Torrent;
+                                        break;
+                                    }
+                                }
+                                $("#info-torrent-name").html(torrent.Name);
+                                $("#info-torrent-size").html(torrent.FormattedSize);
+                            });
+
+                            //Start playing first source
+                            $('#source-1').click();
+                            $("#movie").addClass("show");
+                            $(".spinner-overlay").remove();
+                            showSource();
+                        }
+                    });
+                }
+
+            });
+
+            function playTorrent(infoHash) {
+                resetBuffer();
+                main.stopDownload();
+                setTimeout(function () {
+                    main.playTorrent(infoHash);
+                    var engine = main.getEngine();
+
+                    var started = Date.now();
+                    var wires = engine.swarm.wires;
+                    var swarm = engine.swarm;
+
+                    engine.server.on('listening', function () {
+                        if (!engine.server.address())
+                            return;
+
+                        var port = engine.server.address().port;
+                        console.log(port);
+
+                        var href = 'http://' + address() + ':' + port + '/';
+
+                        console.log('server is listening on ' + href);
+
+                        var minimum = 5242880; //1.5mb
+                        var isVideoReady = function () {
+                            if (swarm.downloaded > minimum) {
+                                $(".progress-bar").css("width", "100%");
+                                $("#progress-bar-count").text("100%");
+                                console.log("Ready!");
+
+                                //Show the video player
+                                setTimeout(function () {
+                                    $("#loader").addClass("hide");
+                                    $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+
+                                    var video = videojs("torrentVideo");
+
+                                    video.on('error', function(event){
+                                        //Remove default player
+                                        $('#torrentVideo').remove();
+
+                                        //Show error message
+                                        $("#error").removeClass("hide");
+
+                                        //Show source list
+                                        showSource();
+                                    });
+
+                                    video.ready(function() {
+                                        this.play(); //Play the video when the movie is ready
+                                    });
+
+                                }, 500);
+                            } else {
+                                console.log("Not ready yet!");
+                                if (swarm.downloaded != 0) {
+                                    var status = (swarm.downloaded * 100) / minimum;
+                                    $(".progress-bar").css("width", Math.round(status) + "%");
+                                    $("#progress-bar-count").text(Math.round(status) + "%");
+                                } else {
+                                    if(swarm.queued > 0) {
+                                        $("#status").html("Connecting [" + swarm.queued + "]");
+                                    }
+                                }
+
+                                if (!swarm._destroyed) {
+                                    setTimeout(isVideoReady, 500);
+                                }
+                            }
+                        };
+
+                        isVideoReady();
+
+                        var intervalId;
+                        var isDownloading = function () {
+                            if (swarm.downloaded != 0) {
+                                clearInterval(intervalId);
+                                $("#status").html("Buffering");
+                                showInfo();
+                            }
+
+                            if (swarm._destroyed) {
+                                clearInterval(intervalId);
+                            }
+                        }
+
+                        intervalId = setInterval(isDownloading, 500);
+                    });
+
+
+
+                    engine.on('ready', function() {
+                        setInterval(displayEngineInfo, 1000);
+                    });
+
+                }, 2000);
+            }
+
+            function resetBuffer() {
+                $("#status").html("Connecting");
+                $(".progress-bar").css("width", "0%");
+                $("#progress-bar-count").text("0%");
+            }
+
+            function closeDownload() {
+                main.stopDownload();
+                window.history.back();
+            }
+
+            function displayEngineInfo() {
+                var engine = main.getEngine();
+                var swarm = engine.swarm;
+                $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
+                $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
+                $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
+            }
+
+            function showInfo() {
+                $("#source-content").addClass("hide");
+                $("#info-content").removeClass("hide");
+                $("#btnShowInfo").addClass("on");
+                $("#btnShowSource").removeClass("on");
+            }
+
+            function showSource() {
+                $("#source-content").removeClass("hide");
+                $("#info-content").addClass("hide");
+                $("#btnShowSource").addClass("on");
+                $("#btnShowInfo").removeClass("on");
+            }
+
+            function startVLC() {
+                $('#torrentVideo').remove();
+                $("#video-container").html("<embed type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px; z-index:-10000;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+            }
+        </script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="customCSS"></div>
+            <style>
+                #source-content li {
+                    padding: 0;
+                }
+                #source-content li a {
+                    cursor: pointer;
+                    display: block;
+                    padding: 8px 10px;
+                    text-decoration: none;
+                    color: #e9e9e9;
+                }
+                #source-content li:hover, #source-content li .on {
+                    background-color: rgba(10,10,10,0.7);
+                    border-left:3px solid #e9e9e9;
+                }
+
+                #top-nav li a {
+                    text-decoration: none;
+                    color: #424242;
+                }
+
+                #top-nav li a:hover, #top-nav li a.on {
+                    text-decoration: none;
+                    color: #e9e9e9 !important;
+                }
+
+                .vjs-default-skin .vjs-control-bar {
+                    z-index: 1;
+                }
+            </style>
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
+            </div>
+            <script type="text/javascript" src="/js/extensions/video.js"></script>
+            <div id="movie" class="modal fade in" style="top:0;">
+                <div id="loader" class="container center-block" style="margin-top:350px; max-width:500px;">
+                    <h4 id="status">Connecting</h4>
+                    <div class="progress progress-striped active" style="margin-bottom:0;">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                            <div class="ml-5">
+                                <span id="progress-bar-count">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h5 id="current-source" class="pull-left"></h5>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                </div>
+                <div id="error" class="container center-block hide" style="margin-top:300px; max-width:500px;">
+                    <h4 id="status">An error has occured</h4>
+                    <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
+                    <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
+                    <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                </div>
+                <div id="right-nav" class="hidden-xs hidden-sm" style="position:absolute; top:40px; z-index:1; background: rgba(0,0,0,0.8); bottom:0; width:250px; right:0; border-left:thin solid black">
+                    <div style="margin:10px 10px 0 10px;">
+                        <a class="pull-right font-18 color-white" onclick="closeDownload();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                        <h3 id="title"></h3>
+                        <ul id="top-nav" class="list-inline">
+                            <li><a id="btnShowSource" onclick="showSource();">Source</a></li>
+                            <li><a id="btnShowInfo" onclick="showInfo();">Info</a></li>
+                        </ul>
+                    </div>
+                    <div id="nav-content">
+                        <ul id="source-content" class="list-unstyled" style="overflow-y:scroll; overflow-x:hidden;">
+                        </ul>
+                        <div id="info-content" class="hide" style="margin:0 10px;">
+                            <h6 id="info-torrent-name" style="word-break:break-all;"></h6>
+                            <ul class="list-unstyled font-12" style="padding:0; margin:0;">
+                                <li><i class='glyphicon glyphicon-hdd'></i>&nbsp;&nbsp;<span id="info-torrent-size"></span></li>
+                                <li><i class='glyphicon glyphicon-download text-success'></i>&nbsp;&nbsp;<span id="info-downloaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
+                            </ul>
+                            <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                            <div class="font-12 mt-5">If don't get any sound from the video. You can try using VLC before selecting another source.</div>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript" src="/js/extensions/video.js"></script>
+                <div id="video-container" style="width:100%; height:100%;">
+                </div>
+                <script type="text/javascript" src="/js/videojsButtons.js"></script>
+                <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
+            </div>
+            <div class="modal-backdrop fade in" style="opacity:0.85;"></div>
+        </div>
+        <script>
+            $(document).ready(function() {
+                //Fullscreen with player
+                $("body").on("click", ".vjs-fullscreen-control", function () {
+                    console.log('asd');
+                    if(win.isFullscreen) {
+                        $("#torrentVideo").removeClass("vjs-fullscreen");
+                    }
+                    else {
+                        $("#torrentVideo").addClass("vjs-fullscreen");
+                    }
+
+                    win.toggleFullscreen();
+                });
+
+                //Set font size
+                $("body").on("click", ".vjs-fontsize-button .vjs-menu-item", function () {
+                    if(subManager)
+                    {
+                        //Get the size
+                        var size = $(this).data('val');
+
+                        //Set size in sub config
+                        subManager.config.size = size;
+
+                        //Apply the style
+                        setSubConfig(subManager.config);
+                        $(".vjs-fontsize-button .vjs-menu-item").removeClass("vjs-selected");
+                        $(this).addClass("vjs-selected");
+
+                        //Save config for persistence
+                        subManager.saveConfig();
+                    }
+                });
+
+                //Set font color
+                $("body").on("click", ".vjs-fontcolor-button .vjs-menu-item", function () {
+                    if(subManager)
+                    {
+                        //Get the color.
+                        var color = $(this).data('val');
+
+                        //Set the color in the sub config.
+                        subManager.config.color = "" + color + "";
+
+                        //Apply the config to the style.
+                        setSubConfig(subManager.config);
+                        $(".vjs-fontcolor-button .vjs-menu-item").removeClass("vjs-selected");
+                        $(this).addClass("vjs-selected");
+
+                        //Save the config for next use. (Persistence)
+                        subManager.saveConfig();
+                    }
+                });
+            });
+
+            //Hide top bar, right-nav & bottom if mouse is idle
+            var timeout, mX, mY;
+            $("body").mousemove(function( event ) {
+                //If mouse is hovering the top menu than keep it open
+                if($("#top-bar").is(":hover") || $("#right-nav").is(":hover") || !$("#loader").hasClass("hide")) {
+                    clearTimeout(timeout);
+                    return;
+                }
+
+                //Mouse is moving
+                if(mX !== event.pageX && mY !== event.pageY) {
+                    mX = event.pageX;
+                    mY = event.pageY;
+
+                    //Show top bar
+                    if($("#top-bar").is(":hidden")) {
+                        $("#top-bar").slideDown();
+                    }
+
+                    //Show right nav
+                    if($("#right-nav").is(":hidden")) {
+                        $("#right-nav").show();
+                    }
+
+
+                    $(".vjs-control-bar").removeClass("vjs-fade-out").addClass("vjs-fade-in");
+                    $("body").css("cursor","");
+                }
+
+                clearTimeout(timeout);
+
+                //Mouse is idle
+                timeout = setTimeout(function() {
+                    $("#top-bar").slideUp();
+                    $(".vjs-control-bar").removeClass("vjs-fade-in").addClass("vjs-fade-out");
+                    $("#right-nav").hide();
+
+                    $("body").css("cursor","none");
+                }, 3000);
+            });
+
+            // Keyboard events
+            $(document).off('keydown.playercontrol').on('keydown.playercontrol', function(e) {
+                if(!$("#torrentVideo").length) {
+                    return;
+                }
+
+                var video = videojs("torrentVideo");
+
+                if (e.preventDefault) e.preventDefault();
+                var key = e.keyCode;
+                switch (key) {
+                        // esc
+                    case 27:
+                        if(win.isFullscreen) {
+                            win.leaveFullscreen();
+                        }
+                        break;
+                        // F
+                    case 70:
+                        win.toggleFullscreen();
+                        break;
+                        //backspace
+                    case 8:
+                        video.pause().currentTime(0).play();
+                        break;
+                        //Space
+                    case 32:
+                        if(video.paused()) {
+                            video.play();
+                        }else{
+                            video.pause();
+                        }
+                        break;
+                        //m
+                    case 77:
+                        if(video.muted()) {
+                            video.muted(false);
+                        }else{
+                            video.muted(true);
+                        }
+                        break;
+                }
+            });
+        </script>
+    </body>
+</html>

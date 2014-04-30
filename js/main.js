@@ -83,6 +83,18 @@ var playTorrent = function (infoHash) {
         });
     });
 
+    var statsLog = function () {
+        var runtime = Math.floor((Date.now() - started) / 1000);
+
+        console.log(utilities.toBytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
+
+        if (!swarm._destroyed) {
+            setTimeout(statsLog, 500);
+        }
+    };
+
+    statsLog();
+
     engine.server.once('error', function (err) {
         engine.server.listen(0);
         console.log(err);

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Movie player</title>
+        <!-- Javascripts -->
+        <script type='text/javascript' src="/js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="/js/extensions/bootstrap.min.js"></script>
+
+        <!-- Styles -->
+        <link href="/styles/video-skin.css" rel="stylesheet">
+        <link href="/styles/bootstrap.min.css" rel="stylesheet">
+        <link href="/styles/bootly.css" rel="stylesheet">
+        <link href="/styles/videojs.errors.css" rel="stylesheet">
+        <link href="/styles/video-skin.css" rel="stylesheet">
+
+        <script type="text/javascript">
+            var gui = window.require('nw.gui');
+            var win = gui.Window.get();
+            var utilities = require('../js/utilities.js');
+            var address = require('network-address');
+
+            var main = require('../js/main.js');
+            var callwcf = require('../js/callwcf.js');
+
+            $(document).ready(function() {
+                var serieId = utilities.getQueryString('serieId');
+                $("#wrapper").append("<div class='spinner-overlay'></div>");
+                if(serieId) {
+
+                    //Get movie information
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Series(" + serieId + ")?$format=json", function(data) {
+                        var serie = data.d;
+                        console.log(serie);
+                        //Insert backdrop path
+                        if(serie.BackdropPath) {
+                            $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + serie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
+                        }
+
+                        //Populate season dropdown
+                        $("#seasons").append("<li><a onclick=''>All seasons</a></li><li class='divider'></li>");
+                        for(var i=serie.NumberOfSeason; i > 0; i--) {
+                            $("#seasons").append("<li><a onclick=''>Season " + i + "</a></li>");
+                        }
+
+                        //Set poster
+                        $("#poster").attr("src", "http://image.tmdb.org/t/p/w90" + serie.PosterPath);
+
+                        //Check available episodes
+                        callwcf.getSimpleTopSerieTorrents(serieId, function(results) {
+                            var episodes = results;
+                            console.log(episodes);
+
+                            $("#episode-title-list").append(" (" + episodes.length + ")");
+                            for(var i=0; i < episodes.length; i++) {
+                                var episode = episodes[i].Episode;
+                                if(episode.show == false) {
+                                    break;
+                                }
+
+                                var airDate = new Date(episode.AirDate).toDateString();
+
+                                var img = "";
+                                if(episode.StillPath) {
+                                    img = "<img alt='' src='http://image.tmdb.org/t/p/w90" + episode.StillPath + "' class='media-object pull-left' />";
+                                }
+
+                                $("#episode-list").append("<li id='episode-" + (i + 1) + "' class='media episode' data-episode='" + episode.EpisodeId + "' data-infohash='" + episodes[i].Torrent.InfoHash + "'>" + img + "<div class='media-body'><h4 class='media-heading font-14'>Season " + episode.SeasonNumber + " Episode " + episode.EpisodeNumber + "</h4><span class='font-12'><i class='glyphicon glyphicon-calendar'></i>&nbsp;&nbsp;" + airDate + "</span></div></li>");
+                            }
+
+                            $(".episode").click(function () {
+
+                                $(".media").removeClass("on");
+                                $(this).addClass("on");
+
+                                var episodeId = $(this).data("episode");
+                                var infoHash = $(this).data("infohash");
+
+                                //Get episode torrents & inject source into table
+                                callwcf.getEpisodeTorrents(episodeId, 5, function(data) {
+                                    $("#source").empty();
+                                    console.log(data);
+                                    $(data).each(function(index) {
+                                        var source = $(this)[0];
+
+                                        var vlc = "";
+                                        if(source.Torrent.Name.toLowerCase().indexOf("xvid") > -1) {
+                                            vlc = "<span class='glyphicon glyphicon-exclamation-sign font-14 text-warning'></span>&nbsp;&nbsp;VLC&nbsp;&nbsp;";
+                                        }
+
+                                        $("#source").append("<button id='source-" + (index + 1) + "' type='button' data-infohash='" + source.Torrent.InfoHash + "' class='btn btn-default source' onclick='setSource(" + (index + 1) + ");' title='" + source.Torrent.Name + " S:" + source.Torrent.Seeds + " L:" + source.Torrent.Leechs + "'>" + vlc + source.Torrent.FormattedSize + "</button>");
+                                    });
+
+                                    setSource(1);
+                                });
+
+                                //Get episode information
+                                $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Episodes(" + episodeId + ")?$format=json", function(data) {
+                                    var episode = data.d;
+                                    $("#title").html(serie.Name + " - Season " + episode.SeasonNumber + " Episode " + episode.EpisodeNumber);
+                                    $("#episode-title").html(episode.Name);
+                                    var airDate = new Date(episode.AirDate.match(/\d+/)[0] * 1).toDateString();
+                                    $("#episode-date").html(airDate);
+                                    $("#episode-description").html(episode.Overview);
+                                    $("#episode-choose-name").html("Season " + episode.SeasonNumber + " Episode " + episode.EpisodeNumber + " selected");
+                                });
+                            });
+
+                            $("#title").html(serie.Name);
+                            $("#episode-1").click();
+                            $(".spinner-overlay").remove();
+                            $("#serie").show();
+                        });
+                    });
+                }
+
+                $(window).resize();
+            });
+
+            $(window).resize(function() {
+                $("#episode-list").css('max-height', ($(window).height() - 90) + "px");
+                $("#episodes").css('height', ($(window).height() - 90) + "px");
+            });
+
+            var selectedInfoHash = "";
+
+            function setSource(sourceId) {
+                $(".source").removeClass("btn-primary").addClass("btn-default")
+                $(".source i").remove();
+                $("#source-" + sourceId).removeClass("btn-default").addClass("btn-primary");
+                $("#source-" + sourceId).prepend("<i class='glyphicon glyphicon-ok'>&nbsp;</i>");
+                $("#current-source").html("Loading from Source " + sourceId);
+
+                selectedInfoHash = $("#source-" + sourceId).data("infohash");
+            }
+
+            function playTorrent() {
+                if(!selectedInfoHash) {
+                    return;
+                }
+
+                var infoHash = selectedInfoHash;
+                stopDownload();
+                $("#episode-choose").addClass("hide");
+                $("#episode-status").removeClass("hide");
+                setTimeout(function () {
+                    resetBuffer();
+
+                    main.playTorrent(infoHash);
+                    var engine = main.getEngine();
+
+                    var started = Date.now();
+                    var wires = engine.swarm.wires;
+                    var swarm = engine.swarm;
+
+                    engine.server.on('listening', function () {
+                        if (!engine.server.address())
+                            return;
+
+                        var port = engine.server.address().port;
+                        console.log(port);
+
+                        var href = 'http://' + address() + ':' + port + '/';
+
+                        console.log('server is listening on ' + href);
+
+                        var statsLog = function () {
+                            var runtime = Math.floor((Date.now() - started) / 1000);
+                            var peerslisted = 0;
+
+                            wires.every(function (wire) {
+
+                            });
+
+                            console.log(utilities.toBytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
+
+                            if (!swarm._destroyed) {
+                                setTimeout(statsLog, 500);
+                            }
+                        };
+
+                        statsLog();
+
+                        var minimum = 5242880; //1.5mb
+                        var isVideoReady = function () {
+                            if (swarm.downloaded > minimum) {
+                                $(".progress-bar").css("width", "100%");
+                                $("#progress-bar-count").text("100%");
+                                console.log("Ready!");
+
+                                //Show the video player
+                                setTimeout(function () {
+                                    $("#loader").addClass("hide");
+                                    $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+                                    var video = videojs("torrentVideo");
+
+                                    video.errors({
+                                        messages: {
+                                        }
+                                    });
+
+                                    //When the video is ready play it automatically
+                                    video.ready(function() {
+                                        this.play();
+                                    });
+
+                                }, 500);
+                            } else {
+                                console.log("Not ready yet!");
+
+                                if (swarm.downloaded != 0) {
+                                    $("#status").html("Buffering");
+                                    var status = (swarm.downloaded * 100) / minimum;
+                                    $(".progress-bar").css("width", Math.round(status) + "%");
+                                    $("#progress-bar-count").text(Math.round(status) + "%");
+
+                                } else {
+                                    $("#status").html("Connecting [" + swarm.queued + "]");
+                                }
+
+                                if (!swarm._destroyed) {
+                                    setTimeout(isVideoReady, 500);
+                                }
+                            }
+                        };
+
+                        isVideoReady();
+                    });
+
+                    engine.on('ready', function() {
+                        $("#info-torrent-name").html(engine.torrent.name);
+                        $("#info").removeClass("hide");
+                        setInterval(displayEngineInfo, 1000);
+                    });
+
+                }, 2000);
+            }
+
+            function resetBuffer() {
+                $("#status").html("Connecting");
+                $(".progress-bar").css("width", "0%");
+                $("#progress-bar-count").text("0%");
+            }
+
+            function quit() {
+                main.stopDownload();
+                window.history.back();
+            }
+
+            function stopDownload() {
+                main.stopDownload();
+                $('#torrentVideo').remove();
+                $("#episode-status").addClass("hide");
+                $("#episode-choose").removeClass("hide");
+                $("#info").addClass("hide");
+                $("#loader").removeClass("hide");
+
+                resetBuffer();
+            }
+
+            function displayEngineInfo() {
+                var engine = main.getEngine();
+                var swarm = engine.swarm;
+                $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
+                $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
+                $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
+            }
+        </script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="customCSS"></div>
+            <style>
+                #episode-list li {
+                    padding: 10px;
+                }
+
+                #episode-list li:hover, #episode-list li.on  {
+                    background-color: rgba(10,10,10,0.7);
+                    border-left:3px solid #e9e9e9;
+                    cursor:pointer;
+                }
+
+                #episodes {
+                    background-color:rgba(0,0,0,0.8);
+                    border:thin solid black;
+                }
+
+                #info {
+                    background-color:#0D0D0D;
+                    color: #e9e9e9;
+                }
+
+                #episode-info {
+                    background-color:#DBDBDB;
+                    color: #333333;
+                }
+
+                .media, .media .media {
+                    margin-top: 0;
+                }
+            </style>
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
+            </div>
+            <div id="serie" class="modal fade in" style="top:40px;">
+                <div id="casts"s class="col-lg-2 hidden-xs hidden-sm hidden-md"  style="padding:0">
+                </div>
+                <div class="col-xs-8 col-sm-8 col-md-8 col-lg-7"  style="padding:0">
+                    <div id="loader" style="height:450px; padding-top:160px; background-color:black">
+                        <div class="media" style="max-width:400px; margin:0 auto; ">
+                            <div class="pull-left">
+                                <img id="poster" alt="" src="" class="img-responsive img-thumbnail pull-left mr-20">
+                            </div>
+                            <div id="episode-choose" class="media-body">
+                                <h4 id="episode-choose-name" class="media-heading">Choose an episode from the list & press play</h4>
+                                <h5 class="pull-left">You can also select the source you want at the bottom in the source section. This is particaly useful if you are unable to play from default source.</h5>
+
+                                <button type="button" class="btn btn-sm btn-success" onclick="playTorrent();">Play episode</button>
+                            </div>
+                            <div id="episode-status" class="media-body hide">
+                                <h4 id="status" class="media-heading">Connecting</h4>
+                                <div id="progress-bar" class="progress progress-striped active mt-10" style="margin-bottom:0;">
+                                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                                        <div class="ml-5">
+                                            <span id="progress-bar-count">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h5 id="current-source" class="pull-left">Loading from Source [id]</h5>
+                                <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <script type="text/javascript" src="/js/extensions/video.js"></script>
+                    <div id="video-container" style="width:100%; height:100%;">
+                    </div>
+                    <script type="text/javascript" src="/js/videojsButtons.js"></script>
+                    <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
+                    <div id="episode-info" style="padding: 10px 20px; overflow-y:scroll;">
+                        <h2 id="title">[Title]</h2>
+                        <div><span id="episode-title">[Episode title]</span></span><span id="episode-date" class="pull-right">[Episode date]</span><div class="clear-fix"></div></div>
+                    <div id="episode-description" class="font-12 mt-5">
+                        [Episode description]
+                    </div>
+                    <h3>Source</h3>
+                    <div id="source" class="btn-group">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-3" style="padding:0;">
+                <div id="info" class="hide" style="padding:0 10px 10px 10px;">
+                    <h4 class="pull-left">Source info</h4>
+                    <button type="button" class="btn btn-danger btn-xs pull-right mt-10" onclick="stopDownload();">Stop download</button>
+                    <div class="clearfix"></div>
+                    <span id="info-torrent-name" style="word-break:break-all;">[Torrent name]</span>
+                    <ul class="list-unstyled font-12" style="padding:0; margin:10px 0 0 0;">
+                        <li><i class='glyphicon glyphicon-hdd'></i>&nbsp;&nbsp;<span id="info-torrent-size"></span></li>
+                        <li><i class='glyphicon glyphicon-download text-success'></i>&nbsp;&nbsp;<span id="info-downloaded">0.0</span></li>
+                        <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
+                        <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
+                    </ul>
+                </div>
+                <div id="episodes">
+                    <div style="margin:0 10px;">
+                        <h4 id="episode-title-list" class="pull-left">Episodes</h4>
+                        <a class="pull-right font-16 color-white" style="margin-top:8px;"><i class='glyphicon glyphicon-sort-by-order'></i></a>
+                        <div class="btn-group pull-right mr-10" style="margin-top:8px;">
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                All seasons <span class="caret"></span>
+                            </button>
+                            <ul id="seasons" class="dropdown-menu" role="menu">
+                            </ul>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <ul  id="episode-list" class="media-list" style="overflow-y:scroll;overflow-x:hidden;">
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade in" style="opacity:0.85;"></div>
+</div>
+</body>
+</html>
