@@ -11,7 +11,6 @@
         <link href="/styles/video-skin.css" rel="stylesheet">
         <link href="/styles/bootstrap.min.css" rel="stylesheet">
         <link href="/styles/bootly.css" rel="stylesheet">
-        <link href="/styles/videojs.errors.css" rel="stylesheet">
         <link href="/styles/video-skin.css" rel="stylesheet">
 
         <script type="text/javascript">
@@ -120,6 +119,7 @@
             $(window).resize(function() {
                 $("#episode-list").css('max-height', ($(window).height() - 90) + "px");
                 $("#episodes").css('height', ($(window).height() - 90) + "px");
+                $("#episode-info").css('height', ($(window).height() - $("#episode-choose").height()) + "px");
             });
 
             var selectedInfoHash = "";
@@ -194,12 +194,16 @@
                                     $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
                                     var video = videojs("torrentVideo");
 
-                                    video.errors({
-                                        messages: {
-                                        }
+                                    video.on('error', function(event){
+                                        //Remove default player
+                                        $('#torrentVideo').remove();
+
+                                        //Show error message
+                                        $("#error").removeClass("hide");
+                                        $("#loader").removeClass("hide");
+                                        $("#episode-status").addClass("hide");
                                     });
 
-                                    //When the video is ready play it automatically
                                     video.ready(function() {
                                         this.play();
                                     });
@@ -229,7 +233,9 @@
 
                     engine.on('ready', function() {
                         $("#info-torrent-name").html(engine.torrent.name);
+                        $("#info-torrent-size").html(utilities.toBytes(engine.torrent.length));
                         $("#info").removeClass("hide");
+
                         setInterval(displayEngineInfo, 1000);
                     });
 
@@ -251,6 +257,7 @@
                 main.stopDownload();
                 $('#torrentVideo').remove();
                 $("#episode-status").addClass("hide");
+                $("#error").addClass("hide");
                 $("#episode-choose").removeClass("hide");
                 $("#info").addClass("hide");
                 $("#loader").removeClass("hide");
@@ -264,6 +271,12 @@
                 $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
                 $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
                 $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
+            }
+
+            function startVLC() {
+                $('#torrentVideo').remove();
+                $("#loader").addClass("hide");
+                $("#video-container").html("<embed id='torrentVideo' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px; z-index:-10000;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
             }
         </script>
     </head>
@@ -323,10 +336,17 @@
                                 <img id="poster" alt="" src="" class="img-responsive img-thumbnail pull-left mr-20">
                             </div>
                             <div id="episode-choose" class="media-body">
-                                <h4 id="episode-choose-name" class="media-heading">Choose an episode from the list & press play</h4>
+                                <h4 id="episode-choose-name" class="media-heading"></h4>
                                 <h5 class="pull-left">You can also select the source you want at the bottom in the source section. This is particaly useful if you are unable to play from default source.</h5>
 
                                 <button type="button" class="btn btn-sm btn-success" onclick="playTorrent();">Play episode</button>
+                            </div>
+                            <div id="error" class="media-body hide">
+                                <h4>An error has occured</h4>
+                                <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
+                                <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
+                                <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                                <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
                             </div>
                             <div id="episode-status" class="media-body hide">
                                 <h4 id="status" class="media-heading">Connecting</h4>
@@ -347,7 +367,7 @@
                     </div>
                     <script type="text/javascript" src="/js/videojsButtons.js"></script>
                     <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
-                    <div id="episode-info" style="padding: 10px 20px; overflow-y:scroll;">
+                    <div id="episode-info" style="padding: 10px 20px;">
                         <h2 id="title">[Title]</h2>
                         <div><span id="episode-title">[Episode title]</span></span><span id="episode-date" class="pull-right">[Episode date]</span><div class="clear-fix"></div></div>
                     <div id="episode-description" class="font-12 mt-5">
