@@ -141,105 +141,102 @@
 
                 var infoHash = selectedInfoHash;
                 stopDownload();
+
                 $("#episode-choose").addClass("hide");
                 $("#episode-status").removeClass("hide");
-                setTimeout(function () {
-                    resetBuffer();
 
-                    main.playTorrent(infoHash);
-                    var engine = main.getEngine();
+                resetBuffer();
 
-                    var started = Date.now();
-                    var wires = engine.swarm.wires;
-                    var swarm = engine.swarm;
+                main.playTorrent(infoHash);
+                var engine = main.getEngine();
 
-                    engine.server.on('listening', function () {
-                        if (!engine.server.address())
-                            return;
+                var started = Date.now();
+                var wires = engine.swarm.wires;
+                var swarm = engine.swarm;
 
-                        var port = engine.server.address().port;
-                        console.log(port);
+                var statsLog = function () {
+                    var runtime = Math.floor((Date.now() - started) / 1000);
+                    var peerslisted = 0;
 
-                        var href = 'http://' + address() + ':' + port + '/';
+                    wires.every(function (wire) {
 
-                        console.log('server is listening on ' + href);
+                    });
 
-                        var statsLog = function () {
-                            var runtime = Math.floor((Date.now() - started) / 1000);
-                            var peerslisted = 0;
+                    console.log(utilities.toBytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
 
-                            wires.every(function (wire) {
+                    if (!swarm._destroyed) {
+                        setTimeout(statsLog, 500);
+                    }
+                };
 
+                statsLog();
+
+                var minimum = 5242880; //1.5mb
+                var isVideoReady = function () {
+                    if (swarm.downloaded > minimum) {
+                        $(".progress-bar").css("width", "100%");
+                        $("#progress-bar-count").text("100%");
+                        console.log("Ready!");
+
+                        //Show the video player
+                        setTimeout(function () {
+                            $("#loader").addClass("hide");
+                            $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+                            var video = videojs("torrentVideo");
+
+                            video.on('error', function(event){
+                                //Remove default player
+                                $('#torrentVideo').remove();
+
+                                //Show error message
+                                $("#error").removeClass("hide");
+                                $("#loader").removeClass("hide");
+                                $("#episode-status").addClass("hide");
                             });
 
-                            console.log(utilities.toBytes(swarm.downloaded) + " - " + runtime + " - " + swarm.queued);
+                            video.ready(function() {
+                                this.play();
+                            });
 
-                            if (!swarm._destroyed) {
-                                setTimeout(statsLog, 500);
-                            }
-                        };
+                        }, 500);
+                    } else {
+                        console.log("Not ready yet!");
 
-                        statsLog();
+                        if (swarm.downloaded != 0) {
+                            $("#status").html("Buffering");
+                            var status = (swarm.downloaded * 100) / minimum;
+                            $(".progress-bar").css("width", Math.round(status) + "%");
+                            $("#progress-bar-count").text(Math.round(status) + "%");
 
-                        var minimum = 5242880; //1.5mb
-                        var isVideoReady = function () {
-                            if (swarm.downloaded > minimum) {
-                                $(".progress-bar").css("width", "100%");
-                                $("#progress-bar-count").text("100%");
-                                console.log("Ready!");
+                        } else {
+                            $("#status").html("Connecting [" + swarm.queued + "]");
+                        }
 
-                                //Show the video player
-                                setTimeout(function () {
-                                    $("#loader").addClass("hide");
-                                    $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
-                                    var video = videojs("torrentVideo");
+                        if (!swarm._destroyed) {
+                            setTimeout(isVideoReady, 500);
+                        }
+                    }
+                }
 
-                                    video.on('error', function(event){
-                                        //Remove default player
-                                        $('#torrentVideo').remove();
+                isVideoReady();
 
-                                        //Show error message
-                                        $("#error").removeClass("hide");
-                                        $("#loader").removeClass("hide");
-                                        $("#episode-status").addClass("hide");
-                                    });
+                engine.on('ready', function() {
+                    $("#info-torrent-name").html(engine.torrent.name);
+                    $("#info-torrent-size").html(utilities.toBytes(engine.torrent.length));
+                    $("#info").removeClass("hide");
 
-                                    video.ready(function() {
-                                        this.play();
-                                    });
+                    var displayInfo = function () {
+                        $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
+                        $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
+                        $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
 
-                                }, 500);
-                            } else {
-                                console.log("Not ready yet!");
+                        if (!swarm._destroyed) {
+                            setTimeout(displayInfo, 1000);
+                        }
+                    }
 
-                                if (swarm.downloaded != 0) {
-                                    $("#status").html("Buffering");
-                                    var status = (swarm.downloaded * 100) / minimum;
-                                    $(".progress-bar").css("width", Math.round(status) + "%");
-                                    $("#progress-bar-count").text(Math.round(status) + "%");
-
-                                } else {
-                                    $("#status").html("Connecting [" + swarm.queued + "]");
-                                }
-
-                                if (!swarm._destroyed) {
-                                    setTimeout(isVideoReady, 500);
-                                }
-                            }
-                        };
-
-                        isVideoReady();
-                    });
-
-                    engine.on('ready', function() {
-                        $("#info-torrent-name").html(engine.torrent.name);
-                        $("#info-torrent-size").html(utilities.toBytes(engine.torrent.length));
-                        $("#info").removeClass("hide");
-
-                        setInterval(displayEngineInfo, 1000);
-                    });
-
-                }, 2000);
+                    displayInfo();
+                });
             }
 
             function resetBuffer() {
@@ -263,14 +260,6 @@
                 $("#loader").removeClass("hide");
 
                 resetBuffer();
-            }
-
-            function displayEngineInfo() {
-                var engine = main.getEngine();
-                var swarm = engine.swarm;
-                $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
-                $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
-                $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
             }
 
             function startVLC() {

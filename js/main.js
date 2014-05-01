@@ -10,6 +10,7 @@ var requestManager = require('request');
 var $ = window.$;
 var path = require('path');
 var NA = require('nodealytics');
+var os = require('os');
 
 //Internal modules
 var subtitle = require('../js/subtitle.js');
@@ -18,19 +19,16 @@ var localization = require('../js/localization.js');
 
 //Global variables
 var engine, subManager, enginePort, subPort;
-var serverFlag;
 
 //NA.initialize('UA-42435534-2', 'www.flixtor.com', function () {});
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
 var playTorrent = function (infoHash) {
     var torrent;
-    serverFlag = false;
     enginePort = 3549 //popcorn-time use 8888 so let's change it to 3549 which means [flix] in telephone numbers :P
     subPort = 3550
 
     var randPort = Math.floor(Math.random() * (65535 - 49152 + 1)) + 49152; //Choose port between 49152 and 65535
-    $('#popup').load("loader.html");
 
     if (engine) {
         if (!engine.swarm._destroyed) {
@@ -40,35 +38,14 @@ var playTorrent = function (infoHash) {
     }
 
     engine = peerflix( "magnet:?xt=urn:btih:" + infoHash, {
+        connections: os.cpus().length > 1 ? 100 : 30,
         path: './data',
-        connections: 100,
-        port: randPort,
-        dht: true,
-        tracker: true
-    });
-
-    var hotswaps = 0;
-    engine.on('hotswap', function () {
-        hotswaps++;
+        port: enginePort
     });
 
     var started = Date.now();
     var wires = engine.swarm.wires;
     var swarm = engine.swarm;
-
-    var active = function (wire) {
-        return !wire.peerChoking;
-    };
-
-    engine.on('uninterested', function () {
-        engine.swarm.pause();
-        console.log('paused');
-    });
-
-    engine.on('interested', function () {
-        engine.swarm.resume();
-        console.log('resumed');
-    });
 
     engine.on('ready', function() {
         console.log(engine.torrent);
@@ -81,6 +58,17 @@ var playTorrent = function (infoHash) {
 
             engine.langFound = success;
         });
+    });
+
+    engine.server.on('listening', function () {
+        if (!engine.server.address())
+            return;
+
+        var port = engine.server.address().port;
+        console.log(port);
+
+        var href = 'http://' + address() + ':' + port + '/';
+        console.log('Server is listening on ' + href);
     });
 
     var statsLog = function () {
@@ -100,18 +88,19 @@ var playTorrent = function (infoHash) {
         console.log(err);
     });
 
-    engine.server.listen(enginePort);
+    //engine.server.listen(enginePort);
 }
 
 var rmDir = function(dirPath) {
     try { var files = fs.readdirSync(dirPath); }
     catch(e) { return; }
-    if (files.length > 0)
+    if (files.length > 0) {
         for (var i = 0; i < files.length; i++) {
             var filePath = dirPath + '/' + files[i];
             if (fs.statSync(filePath).isFile())
                 fs.unlinkSync(filePath);
         }
+    }
 };
 
 var reloadInstance = function () {
@@ -120,27 +109,28 @@ var reloadInstance = function () {
 
 var stopDownload = function () {
     if (engine) {
-        serverFlag = true;
+        try {
+            engine.destroy();
+            engine.server.listen(0);
+            engine.server.close();
 
-        setTimeout(function () {
-            //engine.myass.destroy();
-
-            try {
-                engine.destroy();
-                engine.server.listen(0);
-                engine.server.close();
-
-                if(subManager)
-                    subManager.server.close();
-            }catch (e)
-            {
-                console.log(e);
+            if(subManager) {
+                subManager.server.close();
             }
+        }
+        catch (e)
+        {
+            console.log(e);
+        }
 
-            rmDir("./data");
-            console.log("Download has stopped!");
-        }, 500);
+        console.log("Download has stopped!");
+        rmDir("./data");
+        console.log("Data has been deleted!");
+
+        return true;
     }
+
+    return false;
 }
 
 var stopPlayer = function (backCount) {

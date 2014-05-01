@@ -102,121 +102,104 @@
 
             function playTorrent(infoHash) {
                 main.stopDownload();
-                setTimeout(function () {
-                    main.playTorrent(infoHash);
-                    var engine = main.getEngine();
 
-                    var started = Date.now();
-                    var wires = engine.swarm.wires;
-                    var swarm = engine.swarm;
+                resetBuffer(); 
 
-                    engine.server.on('listening', function () {
-                        if (!engine.server.address())
-                            return;
+                main.playTorrent(infoHash);
 
-                        var port = engine.server.address().port;
-                        console.log(port);
+                var engine = main.getEngine();
+                var wires = engine.swarm.wires;
+                var swarm = engine.swarm;
 
-                        var href = 'http://' + address() + ':' + port + '/';
 
-                        console.log('server is listening on ' + href);
 
-                        var minimum = 5242880; //1.5mb
+                var minimum = 5242880; //1.5mb
+                var isVideoReady = function () {
+                    if (swarm.downloaded > minimum) {
+                        $(".progress-bar").css("width", "100%");
+                        $("#progress-bar-count").text("100%");
+                        console.log("Ready!");
 
-                        var videoReadyId;
-                        var isVideoReady = function () {
-                            if (swarm.downloaded > minimum) {
-                                $(".progress-bar").css("width", "100%");
-                                $("#progress-bar-count").text("100%");
-                                console.log("Ready!");
-                                clearInterval(videoReadyId);
+                        //Show the video player
+                        $("#loader").addClass("hide");
+                        $("#btnVLC").removeClass("hide");
+                        $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
 
-                                //Show the video player
-                                setTimeout(function () {
-                                    $("#loader").addClass("hide");
-                                    $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+                        var video = videojs("torrentVideo");
 
-                                    var video = videojs("torrentVideo");
+                        video.on('error', function(event){
+                            //Remove default player
+                            $('#torrentVideo').remove();
 
-                                    video.on('error', function(event){
-                                        //Remove default player
-                                        $('#torrentVideo').remove();
+                            //Show error message
+                            $("#error").removeClass("hide");
 
-                                        //Show error message
-                                        $("#error").removeClass("hide");
+                            //Show source list
+                            showSource();
+                        });
 
-                                        //Show source list
-                                        showSource();
-                                    });
+                        video.ready(function() {
+                            this.play(); //Play the video when the movie is ready
+                        });
+                    } else {
+                        console.log("Not ready yet!");
 
-                                    video.ready(function() {
-                                        this.play(); //Play the video when the movie is ready
-                                    });
-
-                                }, 500);
-                            } else {
-                                console.log("Not ready yet!");
-                                if (swarm.downloaded != 0) {
-                                    var status = (swarm.downloaded * 100) / minimum;
-                                    $(".progress-bar").css("width", Math.round(status) + "%");
-                                    $("#progress-bar-count").text(Math.round(status) + "%");
-                                } else {
-                                    if(!swarm._destroyed) {
-                                        if(swarm.queued > 0) {
-                                            $("#status").html("Connecting [" + swarm.queued + "]");
-                                        }
-                                    } else {
-                                        clearInterval(videoReadyId);
-                                        resetBuffer();
-                                    }
-                                }
-                            }
+                        if (swarm.downloaded != 0) {
+                            var status = (swarm.downloaded * 100) / minimum;
+                            $(".progress-bar").css("width", Math.round(status) + "%");
+                            $("#progress-bar-count").text(Math.round(status) + "%");
+                        } else {
+                            $("#status").html("Connecting [" + swarm.queued + "]");
                         }
 
-                        videoReadyId = setInterval(isVideoReady, 500);
-
-                        var downloadId;
-                        var isDownloading = function () {
-                            if (swarm.downloaded != 0) {
-                                clearInterval(downloadId);
-                                $("#status").html("Buffering");
-                                showInfo();
-                            }
-
-                            if (swarm._destroyed) {
-                                clearInterval(downloadId);
-                            }
+                        if(!swarm._destroyed) {
+                            setTimeout(isVideoReady, 500);
                         }
+                    }
+                }
 
-                        downloadId = setInterval(isDownloading, 500);
-                    });
+                isVideoReady();
 
+                var isDownloading = function () {
+                    if (swarm.downloaded != 0) {
+                        $("#status").html("Buffering");
+                        showInfo();
 
+                        return;
+                    }
 
-                    engine.on('ready', function() {
-                        setInterval(displayEngineInfo, 1000);
-                    });
+                    if (!swarm._destroyed) {
+                        setTimeout(isDownloading, 1000);
+                    }
+                }
 
-                }, 2000);
+                isDownloading();
+
+                engine.on('ready', function() {
+                    var displayInfo = function () {
+                        $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
+                        $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
+                        $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
+
+                        if (!swarm._destroyed) {
+                            setTimeout(displayInfo, 1000);
+                        }
+                    }
+
+                    displayInfo();
+                });
             }
 
             function resetBuffer() {
                 $("#status").html("Connecting");
                 $(".progress-bar").css("width", "0%");
                 $("#progress-bar-count").text("0%");
+                $("#btnVLC").addClass("hide");
             }
 
             function closeDownload() {
                 main.stopDownload();
                 window.history.back();
-            }
-
-            function displayEngineInfo() {
-                var engine = main.getEngine();
-                var swarm = engine.swarm;
-                $("#info-downloaded").html(utilities.toBytes(swarm.downloaded));
-                $("#info-download-speed").html(utilities.toBytes(swarm.downloadSpeed()) + "/s");
-                $("#info-uploaded").html(utilities.toBytes(swarm.uploaded));
             }
 
             function showInfo() {
@@ -326,8 +309,9 @@
                                 <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
                                 <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
                             </ul>
-                            <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
-                            <div class="font-12 mt-5">No sound is playing from the video? You can try using VLC before selecting another source.</div>
+                            <div id="btnVLC" class="hide">
+                                <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                                <div class="font-12 mt-5">No sound is playing from the video? You can try using VLC before selecting another source.</div></div>
                         </div>
                     </div>
                 </div>
