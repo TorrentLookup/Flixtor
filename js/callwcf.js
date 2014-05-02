@@ -1,8 +1,8 @@
-var $ = window.$;
 var utilities = require('../js/utilities.js');
 
 //External functions
 var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, sortReverse, sortTypeId, randomSort, randomSeed, skip, max, callback) {
+    $ = window.$;
 
     if (!ext) {
         ext = "";
@@ -49,6 +49,7 @@ var searchTable = function (tableName, searchKey, searchValue, ext, sorColumn, s
 }
 
 var getSimpleTopSerieTorrents = function (serieId, callback) {
+    $ = window.$;
     var BasicHttpBinding = require('wcf.js').BasicHttpBinding,
         Proxy = require('wcf.js').Proxy,
         binding = new BasicHttpBinding({
@@ -74,10 +75,6 @@ var getSimpleTopSerieTorrents = function (serieId, callback) {
     });
 }
 
-var reloadInstance = function () {
-    $ = window.$;
-}
-
 var parseSearch = function (key, search) {
     if (search) {
         search = search.replace("[^\w\s_]", " ").replace("_", " ");
@@ -93,6 +90,7 @@ var parseSearch = function (key, search) {
 }
 
 var getGenres = function (id) {
+    $ = window.$;
     $.getJSON("http://www.torrentlookup.com/services/v4/services/mediaservices/mediadataservice.svc/Genres?$format=json", function (data) {
         var items = [];
         $.each(data.d.results, function (key, val) {
@@ -105,6 +103,7 @@ var getGenres = function (id) {
 }
 
 var getEpisodeTorrents = function (episodeId, max, callback) {
+    $ = window.$;
     var BasicHttpBinding = require('wcf.js').BasicHttpBinding,
         Proxy = require('wcf.js').Proxy,
         binding = new BasicHttpBinding({
@@ -137,4 +136,3 @@ module.exports.parseSearch = parseSearch;
 module.exports.getSimpleTopSerieTorrents = getSimpleTopSerieTorrents;
 module.exports.getEpisodeTorrents = getEpisodeTorrents;
 module.exports.searchTable = searchTable;
-module.exports.reloadInstance = reloadInstance;

@@ -7,7 +7,6 @@ var request = require('request');
 var gui = window.require('nw.gui');
 var win = gui.Window.get();
 var requestManager = require('request');
-var $ = window.$;
 var path = require('path');
 var NA = require('nodealytics');
 var os = require('os');
@@ -103,10 +102,6 @@ var rmDir = function(dirPath) {
     }
 };
 
-var reloadInstance = function () {
-    $ = window.$;
-}
-
 var stopDownload = function () {
     if (engine) {
         try {
@@ -140,7 +135,11 @@ var stopPlayer = function (backCount) {
 
 var closeApp = function () {
     stopDownload();
-    gui.App.closeAllWindows();
+    utilities.showPrompt("Confirm close","You are about to close the application. Are you sure you want to continue?", "question", function (answer) {
+        if(answer) {
+            gui.App.closeAllWindows();
+        }
+    });
 }
 
 var getEngine = function() {
@@ -164,24 +163,56 @@ function minimize() {
     win.minimize();
 }
 
+function goBack() {
+    if(engine) {
+        stopDownload();
+    }
 
-var updateLoader = function (downloaded, total, downloadSpeed) {
-    var status = (downloaded * 100) / total;
-    $("#bufferModalStatus").text("Buffering");
-    $("#bufferProgressBar").removeClass("hide");
-    setProgress(status, downloadSpeed);
+    if(window.sessionStorage.history) {
+        var  historyList = JSON.parse(window.sessionStorage.history);
+
+        if(historyList.length > 0) {
+
+            window.location = historyList[(historyList.length - 1)];
+            var index = historyList.indexOf(historyList.length - 1);
+            historyList.splice(index, 1);
+            window.sessionStorage.history = JSON.stringify(historyList);
+        }
+    }
 }
 
-var setProgress = function (status, downloadSpeed)
+//url must be absolute
+function go(url) {
+    window.location = url;
+    saveHistory(url);
+}
+
+function changeFrame (frame) {
+    var url = frame + ".html";
+    window.location = url;
+    saveHistory(url);
+}
+
+function saveHistory(url)
 {
-    $(".progress-bar").css("width", Math.round(status) + "%");
-    $("#progress-bar-count").text(Math.round(status) + "%");
-    $("#progress-bar-status").text(utilities.toBytes(downloadSpeed));
-}
+    var url = window.location.href;
+    if(window.location.href == path)
+        return;
 
-//Inject html frame into index.html and change the sidebar menu
-var changeFrame = function (frame) {
-    window.location = frame + ".html";
+    var historyList = [];
+    if(window.sessionStorage.history) {
+        historyList = JSON.parse(window.sessionStorage.history);
+
+        //check for back duplicate
+        if(historyList.length > 0) {
+            if(historyList[(historyList.length - 1)] == url) {
+                return;
+            }
+        }
+    }
+
+    historyList.push(url);
+    window.sessionStorage.history = JSON.stringify(historyList);
 }
 
 //Disable file drop over
@@ -206,9 +237,13 @@ win.on("loaded", function (e) {
     //Check for internet connection on startup
     utilities.hasInternetConnection(function (hasInternet) {
         if (!hasInternet) {
-            utilities.showMsg("No internet access", "<span>You don't have access to internet, please check your connection and try again.</span>");
+            utilities.showPrompt("No internet access", "You don't have access to internet, please check your connection and try again.", "ok", function(answer) {
+                gui.App.closeAllWindows();
+            });
         }
     });
+
+    //$(".top-titlebar-back-button").removeClass("hide");
 });
 
 var getPlatform = function() {
@@ -226,11 +261,11 @@ module.exports.stopPlayer = stopPlayer;
 module.exports.closeApp = closeApp;
 module.exports.playTorrent = playTorrent;
 module.exports.changeFrame = changeFrame;
-module.exports.reloadInstance = reloadInstance;
-module.exports.$ = $;
 module.exports.NA = NA;
 module.exports.getEngine = getEngine;
 module.exports.getSubManager = getSubManager;
+module.exports.goBack = goBack;
+module.exports.go = go;
 
 /*
 process.on('uncaughtException', function (err) {

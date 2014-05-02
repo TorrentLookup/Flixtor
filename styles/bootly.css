@@ -70,6 +70,16 @@ a {
     cursor: pointer;
 }
 
+.top-titlebar-back-button {
+    position: absolute;
+    left: 10px;
+    margin-top: 10px;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    -webkit-transform: rotate(180deg);
+    -webkit-transform: scale(-1, 1);
+}
+
 .top-titlebar-close-button:hover, .top-titlebar-settings-button:hover
 {
     opacity: 0.8;
@@ -390,7 +400,7 @@ small.text-muted {
 
 div.spinner-overlay {
     position: fixed;
-    z-index: 99999;
+    z-index: 1050;
     width: 100%;
     height: 100%;
     left:0;

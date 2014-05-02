@@ -16,9 +16,6 @@
             var callwcf = require('../js/callwcf.js');
             var utilities = require('../js/utilities.js');
 
-            main.reloadInstance();
-            callwcf.reloadInstance();
-
             $(document).ready(function() {
                 //Get movie details
                 //Display spinner while we wait for data
@@ -48,14 +45,14 @@
                         var trailers = movie.Trailers.results;
                         if(trailers.length > 0) {
                             $("#btnTrailer").click(function () {
-                                window.location.href = "trailer.html?youtubeId=" +trailers[0].Source;
+                                main.go("trailer.html?youtubeId=" +trailers[0].Source);
                             });
                         }else {
                             $("#btnTrailer").addClass("hide");
                         }
 
                         $("#btnPlay").click(function () {
-                            window.location.href = "/frames/players/movie-player.html?movieId=" + movieId;
+                            main.go("players/movie-player.html?movieId=" + movieId);
                         });
 
                         $("#rating").attr("style", "width:" + (movie.VoteAverage * 10) + "% !important");
@@ -91,6 +88,9 @@
         <div id="customCSS"></div>
         <div id="wrapper">
             <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -110,7 +110,7 @@
                                 <div class="col-sm-3 hidden-sm hidden-xs">
                                     <img id="poster" alt="" src="" width="200" class="img-responsive img-thumbnail"  /></div>
                                 <div class="col-sm-9" style="padding:10px;">
-                                    <a class="pull-right font-24 color-white" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                                    <a class="pull-right font-24 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                                     <h1 id="title"></h1>
                                     <h4 id="genres" class="mr-10" style="display:inline-block;"></h4>
                                     <div class="stars-template" style="display:inline-block;">

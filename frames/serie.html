@@ -16,9 +16,6 @@
             var callwcf = require('../js/callwcf.js');
             var utilities = require('../js/utilities.js');
 
-            main.reloadInstance();
-            callwcf.reloadInstance();
-
             $(document).ready(function() {
                 //Get serie details
                 //Display spinner while we wait for data
@@ -96,7 +93,7 @@
                         $("#rating").attr("style", "width:" + (serie.VoteAverage * 10) + "% !important");
 
                         $("#btnPlay").click(function () {
-                            window.location.href = "/frames/players/serie-player.html?serieId=" + serieId;
+                            main.go("players/serie-player.html?serieId=" + serieId);
                         });
 
                         //Keep the movie in a session
@@ -115,6 +112,9 @@
         <div id="customCSS"></div>
         <div id="wrapper">
             <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -139,7 +139,7 @@
                                     </div>
                                 </div>
                                 <div class="col-sm-9 p-10">
-                                    <a class="pull-right font-24 color-white" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                                    <a class="pull-right font-24 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                                     <h1 id="title"></h1>
                                     <h4 id="genres" class="mr-10" style="display:inline-block;"></h4>
                                     <div class="stars-template" style="display:inline-block;">

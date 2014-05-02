@@ -2,7 +2,6 @@
 var gunzip = require('zlib').createGunzip();
 var http = require('http');
 var numeral = require('numeral');
-var $ = window.$;
 
 var Utilities = function () {
 
@@ -17,24 +16,51 @@ var Utilities = function () {
     }
 
     //Use this to pop an alert message in the application
-    this.showMsg = function (title, message) {
-        $("#popup").html("<div id='messageModal' class='modal fade in show'>" +
-                         "<div class='modal-dialog'>" +
-                         "<div class='modal-content'>" +
-                         "<div class='modal-header'>" +
-                         "<button type='button' class='close' />" +
-                         "<span class='glyphicon glyphicon-remove'></span>" +
-                         "</button>" +
-                         "<span>" + title + "</span>" +
-                         "</div>" +
-                         "<div class='m-10'>" + message +
-                         "</div>" +
-                         "<div class='clearfix'></div>" +
-                         "</div>" +
-                         "</div>" +
-                         "</div>" +
-                         "<div class='modal-backdrop fade in'></div>" +
-                         "</div>");
+    this.showPrompt = function (title, message, type, cb) {
+        $ = window.$;
+        if($("#promptModal").length) {
+            return;
+        }
+
+        var buttons;
+        switch(type)
+        {
+            case "question":
+                buttons = "<div class='pull-right'><button id='btnPromptNo' class='btn btn-sm btn-default'>No</button> | " +
+                    "<button id='btnPromptYes' class='btn btn-sm btn-danger'>Quit</button></div>";
+                break;
+            case "ok":
+                buttons = "<div class='pull-right'><button id='btnPromptNo' class='btn btn-sm btn-default'>Ok</button></div>";
+                break;
+            default:
+                buttons = "";
+                break;
+        }
+
+
+        $("#wrapper").append("<div id='promptModal'><div class='modal fade in show color-light-black' style='z-index: 1052;'>" +
+                             "<div class='modal-dialog'>" +
+                             "<div class='modal-content'>" +
+                             "<div class='modal-header'>" +
+                             "<span>" + title + "</span>" +
+                             "</div>" +
+                             "<div class='m-10' style='line-height: 30px;'>" + message + buttons +
+                             "<div class='clearfix'></div>" +
+                             "</div>" +
+                             "</div>" +
+                             "</div>" +
+                             "</div>" +
+                             "<div class='modal-backdrop fade in' style='z-index: 1051;'></div></div>");
+
+        $("body").on("click", "#btnPromptYes", function () {
+            $("#promptModal").remove();
+            cb(true);
+        });
+
+        $("body").on("click", "#btnPromptNo", function () {
+            $("#promptModal").remove();
+            cb(false);
+        });
     }
 
     this.toBytes = function (num) {

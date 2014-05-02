@@ -16,9 +16,6 @@
             var main = require('../js/main.js');
             var callwcf = require('../js/callwcf.js');
 
-            main.reloadInstance();
-            callwcf.reloadInstance();
-
             $(document).ready(function() {
                 //Scroll bar
                 $(window).resize(function() {
@@ -75,6 +72,9 @@
     <body>
         <div id="wrapper">
             <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -190,7 +190,7 @@
                         }
 
                         function showDetails(movieId) {
-                            window.location = "movie.html?movieId=" + movieId;
+                            main.go("movie.html?movieId=" + movieId);
                         }
 
                         function changeSearchText() {

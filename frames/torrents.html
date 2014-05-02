@@ -16,8 +16,6 @@
         <script>
             var main = require('../js/main.js');
             var callwcf = require('../js/callwcf.js');
-            main.reloadInstance();
-            callwcf.reloadInstance();
 
             $(document).ready(function() {
                 //Scroll bar
@@ -36,7 +34,7 @@
         </script>
     </head>
 
-    <body onclick="main.reloadInstance();">
+    <body>
         <style>
             .nav-tabs > li > a {
                 margin-right: 2px;
@@ -104,6 +102,9 @@
         </style>
         <div id="wrapper">
             <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -301,7 +302,7 @@
                         }
 
                         function viewTorrent(torrentId) {
-                            window.location.href = "players/player.html?torrentId=" + torrentId;
+                            main.go("players/player.html?torrentId=" + torrentId);
                         }
 
                         function applySearch() {
@@ -330,7 +331,7 @@
                                                                     "<div style='padding-top:4px'>" +
                                                                     "   <button type='button' class='btn btn-xs btn-default pull-left mb-5 mr-5' onclick='viewTorrent(" + torrent.TorrentId + ");'>" +
                                                                     "      <i class='glyphicon glyphicon-list-alt'></i>&nbsp;Details</button>" +
-               /*                                                     " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
+                                                                    /*                                                     " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
                                                                     "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +*/
                                                                     "</div>" +
                                                                     "<div class='clearfix'></div>" +

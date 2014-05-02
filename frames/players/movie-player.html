@@ -197,11 +197,6 @@
                 $("#btnVLC").addClass("hide");
             }
 
-            function closeDownload() {
-                main.stopDownload();
-                window.history.back();
-            }
-
             function showInfo() {
                 $("#source-content").addClass("hide");
                 $("#info-content").removeClass("hide");
@@ -257,6 +252,9 @@
                 }
             </style>
             <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
                 <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
                     <span class="glyphicon glyphicon-minus"></span>
                 </div>
@@ -280,18 +278,18 @@
                         </div>
                     </div>
                     <h5 id="current-source" class="pull-left"></h5>
-                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="main.goBack();">Cancel</button>
                 </div>
                 <div id="error" class="container center-block hide" style="margin-top:300px; max-width:500px;">
                     <h4>An error has occured</h4>
                     <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
                     <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
                     <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
-                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="closeDownload();">Cancel</button>
+                    <button class="pull-right btn btn-xs btn-danger mt-10" onclick="main.goBack();">Cancel</button>
                 </div>
                 <div id="right-nav" class="hidden-xs hidden-sm" style="position:absolute; top:40px; z-index:1; background: rgba(0,0,0,0.8); bottom:0; width:250px; right:0; border-left:thin solid black">
                     <div style="margin:10px 10px 0 10px;">
-                        <a class="pull-right font-18 color-white" onclick="closeDownload();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                        <a class="pull-right font-18 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                         <h3 id="title"></h3>
                         <ul id="top-nav" class="list-inline">
                             <li><a id="btnShowSource" onclick="showSource();">Source</a></li>
