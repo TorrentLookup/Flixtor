@@ -265,7 +265,7 @@
             function startVLC() {
                 $('#torrentVideo').remove();
                 $("#loader").addClass("hide");
-                $("#video-container").html("<embed id='torrentVideo' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px; z-index:-10000;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                $("#video-container").html("<embed id='torrentVideo' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
             }
         </script>
     </head>
@@ -358,7 +358,6 @@
                     <div id="video-container" style="width:100%; height:100%;">
                     </div>
                     <script type="text/javascript" src="/js/videojsButtons.js"></script>
-                    <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
                     <div id="episode-info" style="padding: 10px 20px;">
                         <h2 id="title">[Title]</h2>
                         <div><span id="episode-title">[Episode title]</span></span><span id="episode-date" class="pull-right">[Episode date]</span><div class="clear-fix"></div></div>

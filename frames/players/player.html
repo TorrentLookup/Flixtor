@@ -66,6 +66,10 @@
                 }
             }
 
+            $(window).resize(function() {
+                setVLC();
+            }).trigger("resize");
+
             function playTorrent (infoHash) {
                 main.stopDownload();
 
@@ -89,21 +93,7 @@
 
                         //Show the video player
                         $("#loader").addClass("hide");
-                        $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
-
-                        var video = videojs("torrentVideo");
-
-                        video.on('error', function(event){
-                            //Remove default player
-                            $('#torrentVideo').remove();
-
-                            //Show error message
-                            $("#error").removeClass("hide");
-                        });
-
-                        video.ready(function() {
-                            this.play(); //Play the video when the movie is ready
-                        });
+                        startDefaultPlayer();
 
                     } else {
                         console.log("Not ready yet!");
@@ -160,9 +150,61 @@
                 $("#torrent-modal").removeClass("hide");
             }
 
+            function startDefaultPlayer()
+            {
+                $("#btnDefaultPlayer").addClass("hide");
+                $("#btnVLC").removeClass("hide");
+                $('#VLC').remove();
+                $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+
+                var video = videojs("torrentVideo");
+
+                video.on('error', function(event){
+                    //Remove default player
+                    $('#torrentVideo').remove();
+
+                    //Show error message
+                    $("#error").removeClass("hide");
+
+                    //Show source list
+                    showSource();
+                });
+
+                video.ready(function() {
+                    this.play(); //Play the video when the movie is ready
+                });
+            }
+
             function startVLC() {
+                //Remove error msg 
+                $("#error").addClass("hide");
+                $("#btnDefaultPlayer").removeClass("hide");
+                $("#btnVLC").addClass("hide");
+                var video = videojs("torrentVideo");
+                video.dispose();
                 $('#torrentVideo').remove();
-                $("#video-container").html("<embed type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px; z-index:-10000;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                $("#video-container").html("<embed id='VLC' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                setVLC();
+            }
+
+            function setVLC() {
+                if($("#VLC").length) {
+                    //width
+                    var width = $(window).width();
+
+                    if($("#top-nav").width() != 0) {
+                        width = (width - ($("#top-nav").width() + 20));
+                    }
+
+                    $("#VLC").attr("width", width + "px");
+
+                    //height
+                    if($("#top-bar").height() != 0) {
+                        $("#VLC").attr("top", $("#top-bar").height() + "px").attr("height", ($(window).height() - $("#top-bar").height()));
+                    }else {
+                        $("#VLC").attr("top", "0px").attr("height", $(window).height());
+                    }
+                }
             }
         </script>
 
@@ -199,6 +241,10 @@
                 text-decoration: none;
                 color: #e9e9e9 !important;
             }
+
+            .vjs-default-skin .vjs-control-bar {
+                z-index: 1;
+            }
         </style>
         <div id="wrapper">
             <div id="top-bar">
@@ -219,7 +265,7 @@
             <div id="torrent" class="modal fade in" style="top:0;">
                 <div id="torrent-modal" class="container center-block" style="margin-top:100px; max-width:700px;">
                     <h3 id="torrent-modal-title" class="pull-left" style="max-width:600px;"></h3>
-                    <a class="pull-right font-24 color-white mt-20" onclick="window.history.back();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                    <a class="pull-right font-24 color-white mt-20" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
                     <div class="clearfix"></div>
                     <div class="pull-left">
                         <span id="torrent-modal-seeds" class="text-success font-16"></span> are uploading.<br>
@@ -275,8 +321,13 @@
                                 <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
                                 <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
                             </ul>
-                            <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
-                            <div class="font-12 mt-5">No sound is playing from the video? You can try switching to VLC.</div>
+                            <div id="btnVLC" class="hide">
+                                <button class="btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                                <div class="font-12 mt-5">No sound is playing from the video? You can try using VLC before selecting another source.</div>
+                            </div>
+                            <div id="btnDefaultPlayer" class="hide">
+                                <button class="btn btn-xs btn-primary mt-10" onclick="startDefaultPlayer();">Switch to Default player</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -284,7 +335,6 @@
                 <div id="video-container" style="width:100%; height:100%;">
                 </div>
                 <script type="text/javascript" src="/js/videojsButtons.js"></script>
-                <script type="text/javascript" src="/js/extensions/videojs.errors.js"></script>
             </div>
             <div class="modal-backdrop fade in" style="opacity:0.3;"></div>
         </div>
