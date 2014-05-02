@@ -72,7 +72,7 @@
 
             function playTorrent (infoHash) {
                 main.stopDownload();
-
+                resetBuffer();
                 $("#loader").removeClass("hide");
                 $("#torrent-modal").addClass("hide");
 
@@ -148,6 +148,22 @@
                 main.stopDownload();
                 $("#loader").addClass("hide");
                 $("#torrent-modal").removeClass("hide");
+                $("#right-nav").addClass("hide");
+
+                if($('#torrentVideo').length) {
+                    var video = videojs("torrentVideo");
+                    video.dispose();
+                    $('#torrentVideo').remove();
+                }
+                $("#VLC").remove();
+
+                resetBuffer();
+            }
+
+            function resetBuffer() {
+                $("#status").html("Connecting");
+                $(".progress-bar").css("width", "0%");
+                $("#progress-bar-count").text("0%");
             }
 
             function startDefaultPlayer()
@@ -157,6 +173,7 @@
                 $('#VLC').remove();
                 $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
 
+                setSubtitles();
                 var video = videojs("torrentVideo");
 
                 video.on('error', function(event){
@@ -192,8 +209,8 @@
                     //width
                     var width = $(window).width();
 
-                    if($("#top-nav").width() != 0) {
-                        width = (width - ($("#top-nav").width() + 20));
+                    if($("#right-nav").width() != 0) {
+                        width = (width - $("#right-nav").width());
                     }
 
                     $("#VLC").attr("width", width + "px");
@@ -203,6 +220,34 @@
                         $("#VLC").attr("top", $("#top-bar").height() + "px").attr("height", ($(window).height() - $("#top-bar").height()));
                     }else {
                         $("#VLC").attr("top", "0px").attr("height", $(window).height());
+                    }
+                }
+            }
+
+            function setSubtitles()
+            {
+                if(subManager) {
+                    if(subManager.hasSubtitles)
+                    {
+                        for(var i = 0; i < subManager.list.length; i++)
+                        {
+                            var subtitle = subManager.list[i];
+                            $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.iso639 + ".srt' srclang='" + subtitle.iso639 + "' label='" + subtitle.languageName + "' />");
+                        }
+
+                        //Initialize videojs with buttons for subtitles
+                        //var video = videojs("torrentVideo", {
+                        //plugins : { fontcolor : {}, fontsize : {} }
+                        //});
+
+                        //Load size and color default config -- Initialize subtitles config
+                        subManager.loadConfig(); //Get config values from localSettings
+                        setSubConfig(subManager.config); //Apply changes to the player
+
+                        //Set selected style to the buttons
+                        $(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
+                        $(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
+
                     }
                 }
             }
@@ -338,7 +383,148 @@
             </div>
             <div class="modal-backdrop fade in" style="opacity:0.3;"></div>
         </div>
+        <script>
+            $(document).ready(function() {
+                //Fullscreen with player
+                $("body").on("click", ".vjs-fullscreen-control", function () {
+                    console.log('asd');
+                    if(win.isFullscreen) {
+                        $("#torrentVideo").removeClass("vjs-fullscreen");
+                    }
+                    else {
+                        $("#torrentVideo").addClass("vjs-fullscreen");
+                    }
 
+                    win.toggleFullscreen();
+                });
+
+                //Set font size
+                $("body").on("click", ".vjs-fontsize-button .vjs-menu-item", function () {
+                    if(subManager)
+                    {
+                        //Get the size
+                        var size = $(this).data('val');
+
+                        //Set size in sub config
+                        subManager.config.size = size;
+
+                        //Apply the style
+                        setSubConfig(subManager.config);
+                        $(".vjs-fontsize-button .vjs-menu-item").removeClass("vjs-selected");
+                        $(this).addClass("vjs-selected");
+
+                        //Save config for persistence
+                        subManager.saveConfig();
+                    }
+                });
+
+                //Set font color
+                $("body").on("click", ".vjs-fontcolor-button .vjs-menu-item", function () {
+                    if(subManager)
+                    {
+                        //Get the color.
+                        var color = $(this).data('val');
+
+                        //Set the color in the sub config.
+                        subManager.config.color = "" + color + "";
+
+                        //Apply the config to the style.
+                        setSubConfig(subManager.config);
+                        $(".vjs-fontcolor-button .vjs-menu-item").removeClass("vjs-selected");
+                        $(this).addClass("vjs-selected");
+
+                        //Save the config for next use. (Persistence)
+                        subManager.saveConfig();
+                    }
+                });
+            });
+
+            //Hide top bar, right-nav & bottom if mouse is idle
+            var timeout, mX, mY;
+            $("body").mousemove(function( event ) {
+                //If mouse is hovering the top menu than keep it open or when vlc is on
+                if($("#top-bar").is(":hover") || $("#right-nav").is(":hover") || !$("#loader").hasClass("hide") || $("#VLC").length) {
+                    clearTimeout(timeout);
+                    return;
+                }
+
+                //Mouse is moving
+                if(mX !== event.pageX && mY !== event.pageY) {
+                    mX = event.pageX;
+                    mY = event.pageY;
+
+                    //Show top bar
+                    if($("#top-bar").is(":hidden")) {
+                        $("#top-bar").slideDown();
+                    }
+
+                    //Show right nav
+                    if($("#right-nav").is(":hidden")) {
+                        $("#right-nav").show();
+                    }
+
+
+                    $(".vjs-control-bar").removeClass("vjs-fade-out").addClass("vjs-fade-in");
+                    $("body").css("cursor","");
+                    setVLC();
+                }
+
+                clearTimeout(timeout);
+
+                //Mouse is idle
+                timeout = setTimeout(function() {
+                    $("#top-bar").slideUp();
+                    $(".vjs-control-bar").removeClass("vjs-fade-in").addClass("vjs-fade-out");
+                    $("#right-nav").hide();
+                    $("body").css("cursor","none");
+                    setVLC();
+                }, 3000);
+            });
+
+            // Keyboard events
+            $(document).off('keydown.playercontrol').on('keydown.playercontrol', function(e) {
+                if(!$("#torrentVideo").length) {
+                    return;
+                }
+
+                var video = videojs("torrentVideo");
+
+                if (e.preventDefault) e.preventDefault();
+                var key = e.keyCode;
+                switch (key) {
+                        // esc
+                    case 27:
+                        if(win.isFullscreen) {
+                            win.leaveFullscreen();
+                        }
+                        break;
+                        // F
+                    case 70:
+                        win.toggleFullscreen();
+                        break;
+                        //backspace
+                    case 8:
+                        video.pause().currentTime(0).play();
+                        break;
+                        //Space
+                    case 32:
+                        if(video.paused()) {
+                            video.play();
+                        }else{
+                            video.pause();
+                        }
+                        break;
+                        //m
+                    case 77:
+                        if(video.muted()) {
+                            video.muted(false);
+                        }else{
+                            video.muted(true);
+                        }
+                        break;
+                }
+            });
+        </script>
         <!--        <script>
 //Load available subtitles for the current torrent (movie, serie, anime & etc..)
 if(subManager) {
