@@ -52,8 +52,9 @@ var playTorrent = function (infoHash) {
 
         subManager = subtitle(subPort);
         subManager.searchSubtitles(engine.torrent.name, function (success) {
-            if(!success)
+            if(!success) {
                 engine.skipSubtitles = true;
+            }
 
             engine.langFound = success;
         });

@@ -117,9 +117,9 @@
             });
 
             $(window).resize(function() {
-                $("#episode-list").css('max-height', ($(window).height() - 90) + "px");
-                $("#episodes").css('height', ($(window).height() - 90) + "px");
-                $("#episode-info").css('height', ($(window).height() - $("#episode-choose").height()) + "px");
+                //$("#episode-list").css('max-height', ($(window).height() - 90) + "px");
+                //$("#episodes").css('height', ($(window).height() - 90) + "px");
+                //$("#episode-info").css('height', ($(window).height() - $("#episode-choose").height()) + "px");
             });
 
             var selectedInfoHash = "";
@@ -178,27 +178,8 @@
                         $("#progress-bar-count").text("100%");
                         console.log("Ready!");
 
-                        //Show the video player
-                        setTimeout(function () {
-                            $("#loader").addClass("hide");
-                            $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
-                            var video = videojs("torrentVideo");
-
-                            video.on('error', function(event){
-                                //Remove default player
-                                $('#torrentVideo').remove();
-
-                                //Show error message
-                                $("#error").removeClass("hide");
-                                $("#loader").removeClass("hide");
-                                $("#episode-status").addClass("hide");
-                            });
-
-                            video.ready(function() {
-                                this.play();
-                            });
-
-                        }, 500);
+                        $("#loader").addClass("hide");
+                        startDefaultPlayer();
                     } else {
                         console.log("Not ready yet!");
 
@@ -245,14 +226,15 @@
                 $("#progress-bar-count").text("0%");
             }
 
-            function quit() {
-                main.stopDownload();
-                window.history.back();
-            }
-
             function stopDownload() {
                 main.stopDownload();
-                $('#torrentVideo').remove();
+
+                if($("#torrentVideo").length) {
+                    var video = videojs("torrentVideo");
+                    video.dispose();
+                    $('#torrentVideo').remove();
+                }
+
                 $("#episode-status").addClass("hide");
                 $("#error").addClass("hide");
                 $("#episode-choose").removeClass("hide");
@@ -263,9 +245,34 @@
             }
 
             function startVLC() {
+                //Remove error msg
+                $("#error").addClass("hide");
+                //$("#btnDefaultPlayer").removeClass("hide");
+                //$("#btnVLC").addClass("hide");
+                var video = videojs("torrentVideo");
+                video.dispose();
                 $('#torrentVideo').remove();
-                $("#loader").addClass("hide");
-                $("#video-container").html("<embed id='torrentVideo' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                $("#video-container").html("<embed id='VLC' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                setVLC();
+            }
+
+            function startDefaultPlayer() {
+                $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='450px' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
+                var video = videojs("torrentVideo");
+
+                video.on('error', function(event){
+                    //Remove default player
+                    $('#torrentVideo').remove();
+
+                    //Show error message
+                    $("#error").removeClass("hide");
+                    $("#loader").removeClass("hide");
+                    $("#episode-status").addClass("hide");
+                });
+
+                video.ready(function() {
+                    this.play();
+                });
             }
         </script>
     </head>
@@ -294,11 +301,6 @@
                     color: #e9e9e9;
                 }
 
-                #episode-info {
-                    background-color:#DBDBDB;
-                    color: #333333;
-                }
-
                 .media, .media .media {
                     margin-top: 0;
                 }
@@ -319,84 +321,86 @@
                 <div class="top-titlebar-text">Flixtor</div>
             </div>
             <div id="serie" class="modal fade in" style="top:40px;">
-                <div id="casts"s class="col-lg-2 hidden-xs hidden-sm hidden-md"  style="padding:0">
-                </div>
-                <div class="col-xs-8 col-sm-8 col-md-8 col-lg-7"  style="padding:0">
-                    <div id="loader" style="height:450px; padding-top:160px; background-color:black">
-                        <div class="media" style="max-width:400px; margin:0 auto; ">
-                            <div class="pull-left">
-                                <img id="poster" alt="" src="" class="img-responsive img-thumbnail pull-left mr-20">
-                            </div>
-                            <div id="episode-choose" class="media-body">
-                                <h4 id="episode-choose-name" class="media-heading"></h4>
-                                <h5 class="pull-left">You can also select the source you want at the bottom in the source section. This is particaly useful if you are unable to play from default source.</h5>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-sm-8 col-md-8 col-lg-8">
+                            <div id="loader" style="height:450px; padding-top:160px; margin:20px 0; background-color:rgba(0,0,0,0.75); border:thin solid black">
+                                <div class="media" style="max-width:400px; margin:0 auto; ">
+                                    <div class="pull-left">
+                                        <img id="poster" alt="" src="" class="img-responsive img-thumbnail pull-left mr-20">
+                                    </div>
+                                    <div id="episode-choose" class="media-body">
+                                        <h4 id="episode-choose-name" class="media-heading"></h4>
+                                        <h5 class="pull-left">You can also select the source you want at the bottom in the source section. This is particaly useful if you are unable to play from default source.</h5>
 
-                                <button type="button" class="btn btn-sm btn-success" onclick="playTorrent();">Play episode</button>
-                            </div>
-                            <div id="error" class="media-body hide">
-                                <h4>An error has occured</h4>
-                                <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
-                                <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
-                                <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
-                                <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
-                            </div>
-                            <div id="episode-status" class="media-body hide">
-                                <h4 id="status" class="media-heading">Connecting</h4>
-                                <div id="progress-bar" class="progress progress-striped active mt-10" style="margin-bottom:0;">
-                                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-                                        <div class="ml-5">
-                                            <span id="progress-bar-count">0%</span>
+                                        <button type="button" class="btn btn-sm btn-success" onclick="playTorrent();">Play episode</button>
+                                    </div>
+                                    <div id="error" class="media-body hide">
+                                        <h4>An error has occured</h4>
+                                        <div>The video player is unable to start the video. You can switch to VLC or select another source from the list.</div>
+                                        <div class="font-12">Note: If you switch to VLC and you get 'Couldn't load plug-in.' You will need to install the latest version of VLC (Web plugin)</div>
+                                        <button class="pull-left btn btn-xs btn-success mt-10" onclick="startVLC();">Switch to VLC</button>
+                                        <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
+                                    </div>
+                                    <div id="episode-status" class="media-body hide">
+                                        <h4 id="status" class="media-heading">Connecting</h4>
+                                        <div id="progress-bar" class="progress progress-striped active mt-10" style="margin-bottom:0;">
+                                            <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                                                <div class="ml-5">
+                                                    <span id="progress-bar-count">0%</span>
+                                                </div>
+                                            </div>
                                         </div>
+                                        <h5 id="current-source" class="pull-left">Loading from Source [id]</h5>
+                                        <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
                                     </div>
                                 </div>
-                                <h5 id="current-source" class="pull-left">Loading from Source [id]</h5>
-                                <button class="pull-right btn btn-xs btn-danger mt-10" onclick="stopDownload();">Cancel</button>
+                            </div>
+                            <script type="text/javascript" src="/js/extensions/video.js"></script>
+                            <div id="video-container" style="width:100%; height:100%; margin:20px 0;">
+                            </div>
+                            <script type="text/javascript" src="/js/videojsButtons.js"></script>
+                            <div id="episode-info" style="margin:20px 0;">
+                                <h2 id="title">[Title]</h2>
+                                <div><span id="episode-title">[Episode title]</span></span><span id="episode-date" class="pull-right">[Episode date]</span><div class="clear-fix"></div></div>
+                            <div id="episode-description" class="font-12 mt-5">
+                                [Episode description]
+                            </div>
+                            <h3>Source</h3>
+                            <div id="source" class="btn-group">
                             </div>
                         </div>
                     </div>
-                    <script type="text/javascript" src="/js/extensions/video.js"></script>
-                    <div id="video-container" style="width:100%; height:100%;">
-                    </div>
-                    <script type="text/javascript" src="/js/videojsButtons.js"></script>
-                    <div id="episode-info" style="padding: 10px 20px;">
-                        <h2 id="title">[Title]</h2>
-                        <div><span id="episode-title">[Episode title]</span></span><span id="episode-date" class="pull-right">[Episode date]</span><div class="clear-fix"></div></div>
-                    <div id="episode-description" class="font-12 mt-5">
-                        [Episode description]
-                    </div>
-                    <h3>Source</h3>
-                    <div id="source" class="btn-group">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-3" style="padding:0;">
-                <div id="info" class="hide" style="padding:0 10px 10px 10px;">
-                    <h4 class="pull-left">Source info</h4>
-                    <button type="button" class="btn btn-danger btn-xs pull-right mt-10" onclick="stopDownload();">Stop download</button>
-                    <div class="clearfix"></div>
-                    <span id="info-torrent-name" style="word-break:break-all;">[Torrent name]</span>
-                    <ul class="list-unstyled font-12" style="padding:0; margin:10px 0 0 0;">
-                        <li><i class='glyphicon glyphicon-hdd'></i>&nbsp;&nbsp;<span id="info-torrent-size"></span></li>
-                        <li><i class='glyphicon glyphicon-download text-success'></i>&nbsp;&nbsp;<span id="info-downloaded">0.0</span></li>
-                        <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
-                        <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
-                    </ul>
-                </div>
-                <div id="episodes">
-                    <div style="margin:0 10px;">
-                        <h4 id="episode-title-list" class="pull-left">Episodes</h4>
-                        <a class="pull-right font-16 color-white" style="margin-top:8px;"><i class='glyphicon glyphicon-sort-by-order'></i></a>
-                        <div class="btn-group pull-right mr-10" style="margin-top:8px;">
-                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-                                All seasons <span class="caret"></span>
-                            </button>
-                            <ul id="seasons" class="dropdown-menu" role="menu">
+                    <div class="hidden-xs col-sm-4 col-md-4 col-lg-4">
+                        <div id="info" class="hide" style="padding:0 10px 10px 10px;  margin:20px 0 0 0;">
+                            <h4 class="pull-left">Source info</h4>
+                            <button type="button" class="btn btn-danger btn-xs pull-right mt-10" onclick="stopDownload();">Stop download</button>
+                            <div class="clearfix"></div>
+                            <span id="info-torrent-name" style="word-break:break-all;">[Torrent name]</span>
+                            <ul class="list-unstyled font-12" style="padding:0; margin:10px 0 0 0;">
+                                <li><i class='glyphicon glyphicon-hdd'></i>&nbsp;&nbsp;<span id="info-torrent-size"></span></li>
+                                <li><i class='glyphicon glyphicon-download text-success'></i>&nbsp;&nbsp;<span id="info-downloaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-upload text-warning'></i>&nbsp;&nbsp;<span id="info-uploaded">0.0</span></li>
+                                <li><i class='glyphicon glyphicon-tasks text-info'></i>&nbsp;&nbsp;<span id="info-download-speed">0.0</span></li>
                             </ul>
                         </div>
-                        <div class="clearfix"></div>
+                        <div id="episodes" style=" margin:20px 0;">
+                            <div style="margin:0 10px;">
+                                <h4 id="episode-title-list" class="pull-left">Episodes</h4>
+                                <a class="pull-right font-16 color-white" style="margin-top:8px;"><i class='glyphicon glyphicon-sort-by-order'></i></a>
+                                <div class="btn-group pull-right mr-10" style="margin-top:8px;">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        All seasons <span class="caret"></span>
+                                    </button>
+                                    <ul id="seasons" class="dropdown-menu" role="menu">
+                                    </ul>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                            <ul  id="episode-list" class="media-list" style="overflow-y:scroll;overflow-x:hidden;  max-height:800px;">
+                            </ul>
+                        </div>
                     </div>
-                    <ul  id="episode-list" class="media-list" style="overflow-y:scroll;overflow-x:hidden;">
-                    </ul>
                 </div>
             </div>
         </div>

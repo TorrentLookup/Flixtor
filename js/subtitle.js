@@ -35,14 +35,16 @@ var SubManager = function(port)
         var filename = path.basename(u.pathname, '.srt');
 
         var sub = manager.get(filename);
-        if(sub.isDownloaded) {
-            if(sub.data) {
-                res.end(manager.decode(sub.data, sub.ISO639));
+        if(sub) {
+            if(sub.isDownloaded) {
+                if(sub.data) {
+                    res.end(manager.decode(sub.data, sub.ISO639));
+                }
+            }else {
+                sub.download(function (data) {
+                    res.end(manager.decode(data, sub.ISO639));
+                });
             }
-        }else {
-            sub.download(function (data) {
-                res.end(manager.decode(data, sub.ISO639));
-            });
         }
     });
 

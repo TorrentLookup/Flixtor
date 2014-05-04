@@ -15,7 +15,6 @@
 
             var main = require('../js/main.js');
             var engine = main.getEngine();
-            var subManager = main.getSubManager();
 
             $(document).ready(function() {
                 $("#wrapper").append("<div class='spinner-overlay'></div>");
@@ -168,13 +167,24 @@
 
             function startDefaultPlayer()
             {
+                var subManager = main.getSubManager();
                 $("#btnDefaultPlayer").addClass("hide");
                 $("#btnVLC").removeClass("hide");
                 $('#VLC').remove();
                 $("#video-container").html("<video id='torrentVideo' class='video-js vjs-default-skin' height='100%' width='100%' controls='controls'><source src='http://127.0.0.1:3549' type='video/mp4' /></video>");
 
                 setSubtitles();
-                var video = videojs("torrentVideo");
+                var video = videojs("torrentVideo", {
+                    plugins : { fontcolor : {}, fontsize : {} }
+                });
+
+                //Load size and color default config -- Initialize subtitles config
+                subManager.loadConfig(); //Get config values from localSettings
+                setSubConfig(subManager.config); //Apply changes to the player
+
+                //Set selected style to the buttons
+                $(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
+                $(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
 
                 video.on('error', function(event){
                     //Remove default player
@@ -182,9 +192,6 @@
 
                     //Show error message
                     $("#error").removeClass("hide");
-
-                    //Show source list
-                    showSource();
                 });
 
                 video.ready(function() {
@@ -226,6 +233,7 @@
 
             function setSubtitles()
             {
+                var subManager = main.getSubManager();
                 if(subManager) {
                     if(subManager.hasSubtitles)
                     {
@@ -234,20 +242,6 @@
                             var subtitle = subManager.list[i];
                             $("#video-container source").after("<track kind='subtitles' charset='utf-8' src='http://127.0.0.1:3550/" + subtitle.iso639 + ".srt' srclang='" + subtitle.iso639 + "' label='" + subtitle.languageName + "' />");
                         }
-
-                        //Initialize videojs with buttons for subtitles
-                        //var video = videojs("torrentVideo", {
-                        //plugins : { fontcolor : {}, fontsize : {} }
-                        //});
-
-                        //Load size and color default config -- Initialize subtitles config
-                        subManager.loadConfig(); //Get config values from localSettings
-                        setSubConfig(subManager.config); //Apply changes to the player
-
-                        //Set selected style to the buttons
-                        $(".vjs-fontcolor-button .vjs-menu-item[data-val='" + subManager.config.color +"']").addClass("vjs-selected"); //color
-                        $(".vjs-fontsize-button .vjs-menu-item[data-val='" + subManager.config.size +"']").addClass("vjs-selected"); //size
-
                     }
                 }
             }
@@ -400,6 +394,7 @@
 
                 //Set font size
                 $("body").on("click", ".vjs-fontsize-button .vjs-menu-item", function () {
+                    var subManager = main.getSubManager();
                     if(subManager)
                     {
                         //Get the size
@@ -420,6 +415,7 @@
 
                 //Set font color
                 $("body").on("click", ".vjs-fontcolor-button .vjs-menu-item", function () {
+                    var subManager = main.getSubManager();
                     if(subManager)
                     {
                         //Get the color.
