@@ -19,7 +19,7 @@ var localization = require('../js/localization.js');
 //Global variables
 var engine, subManager, enginePort, subPort;
 
-//NA.initialize('UA-42435534-2', 'www.flixtor.com', function () {});
+NA.initialize('UA-42435534-2', 'www.flixtor.com', function () {});
 NA.trackPage('Torrents', '/fixtorapp/open/', function (err, resp) {}); //Track when user is opening the application
 
 var playTorrent = function (infoHash) {
@@ -58,6 +58,8 @@ var playTorrent = function (infoHash) {
 
             engine.langFound = success;
         });
+
+        NA.trackEvent('Player', 'Play torrent', engine.torrent.infoHash + " - " + engine.torrent.name, function (err, resp) {});
     });
 
     engine.server.on('listening', function () {

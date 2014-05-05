@@ -503,12 +503,18 @@
             });
 
             $(window).mouseout(function( event ) {
-                if($("#top-bar").is(":hover") || $("#right-nav").is(":hover") || !$("#loader").hasClass("hide") || $("#VLC").length) {
-                    return;
-                }
+                if($("#torrentVideo").length > 0) {
+                    if($("#top-bar").is(":hover") || $("#right-nav").is(":hover") || !$("#loader").hasClass("hide") || $("#VLC").length) {
+                        return;
+                    }
 
-                $("#top-bar").hide();
-                $("#right-nav").hide();
+                    if($("#torrentVideo").length) {
+                        if($("#torrentVideo").hasClass("vjs-fullscreen")) {
+                            $("#top-bar").hide();
+                            $("#right-nav").hide();
+                        }
+                    }
+                }
             });
 
             // Keyboard events

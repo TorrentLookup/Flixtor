@@ -6,7 +6,7 @@
     "window": {
         "title": "Flixtor",
         "icon": "images/flixtor-ico.png",
-        "toolbar": true,
+        "toolbar": false,
         "frame": false,
         "width": 1280,
         "height": 770,
