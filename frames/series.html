@@ -40,6 +40,21 @@
                     var serie = $.parseJSON(sessionStorage.serie);
                     //showDetails(serie.SerieId , true);
                 }
+
+                $("#txtSerieSearch").bind('keyup paste', function() {
+                    clearTimeout($(this).data('timeout'));
+                    $(this).data('timeout', setTimeout(function(){
+                        var movieSearchValue = $('#txtSerieSearch').val();
+
+                        if(movieSearchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                            $("#btnSearchSerie").text('Play');
+                        }
+                        else {
+                            $( "#btnSearchSerie" ).empty();
+                            $("#btnSearchSerie").append('<span class="glyphicon glyphicon-search"></span>');
+                        }
+                    }, 200));
+                });
             });
         </script>
 
@@ -196,7 +211,13 @@
 
                         function changeSearchText() {
                             serieFilter.searchValue = $("#txtSerieSearch").val();
-                            serieApplySearch();
+                            if(serieFilter.searchValue.indexOf('magnet:?xt=urn:btih:') == 0) {
+                                var infoHash = serieFilter.searchValue.split('magnet:?xt=urn:btih:');
+                                startTorrent(infoHash[1]);
+                            }
+                            else {
+                                serieApplySearch();
+                            }
                         }
 
                         function startTorrent(infoHash) {
@@ -300,7 +321,7 @@
                         <div class="row" style="margin-right:0;">
                             <div class="col-lg-10">
                                 <div class="input-group">
-                                    <input id="txtSerieSearch" type="text" class="form-control black-input" placeholder="Serie title...">
+                                    <input id="txtSerieSearch" type="text" class="form-control black-input" placeholder="Serie title or magnet link...">
                                     <span class="input-group-btn">
                                         <button class="btn btn-default" type="button" id="btnSearchSerie" onclick="changeSearchText();">
                                             <span class="glyphicon glyphicon-search"></span>
