@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
+
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
+
+        <!-- Modules -->
+        <script>
+            var main = require('../js/main.js');
+            var callwcf = require('../js/callwcf.js');
+            var utilities = require('../js/utilities.js');
+
+            $(document).ready(function() {
+                //Get serie details
+                //Display spinner while we wait for data
+                $("#content-wrapper").append("<div class='spinner-overlay'></div>");
+
+                var serieId = utilities.getQueryString('serieId');
+                if(serieId) {
+                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Series(" + serieId + ")?$format=json&$expand=Genres,Casts,Networks", function(data) {
+                        var serie = data.d;
+                        console.log(serie);
+                        //Insert backdrop path
+                        $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + serie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
+
+                        //Set variables to html
+                        $("#poster").attr('src', 'http://image.tmdb.org/t/p/w300' + serie.PosterPath);
+                        $("#title").html(serie.Name);
+
+                        var genres = serie.Genres.results;
+                        if(genres.length > 0) {
+                            for(var i=0; i < genres.length; i++) {
+                                $("#genres").append(genres[i].Name);
+
+                                if(i < (genres.length - 1)) {
+                                    $("#genres").append(", ");
+                                }
+                            }
+                        }else {
+                            $("#genres").append("No genres");
+                        }
+
+                        if(serie.Overview) {
+                            $("#plot").html(serie.Overview);
+                        }else {
+                            $("#plot").addClass("hide");
+                        }
+
+                        if(serie.EpisodeRunTime) {
+                            $("#runtime").append(serie.EpisodeRunTime + "m / episodes");
+                        } else {
+                            $("#runtime").addClass("hide");
+                        }
+
+                        if(serie.FirstAirDate && serie.LastAirDate) {
+                            $("#date").append(new Date(serie.FirstAirDate.match(/\d+/)[0] * 1).toDateString() + " - " + new Date(serie.LastAirDate.match(/\d+/)[0] * 1).toDateString());
+                        } else {
+                            $("#date").addClass("hide");
+                        }
+
+                        $("#info").append(serie.NumberOfEpisode + " episodes / " + serie.NumberOfSeason + " seasons");
+
+                        $("#status").html(serie.Status);
+
+                        var networks = serie.Networks.results;
+                        if(networks.length > 0 ) {
+                            $("#network").append(networks[0].Name);
+                        } else {
+                            $("#network").addClass("hide");
+                        }
+
+                        var casts = serie.Casts.results;
+                        for(var i=0; i < casts.length; i++) {
+                            $("#casts").append(casts[i].Name + " <span class='color-gray font-12'>as " + casts[i].Character + "</span><br/>");
+
+                            if(i == 4) {
+                                break; //Max of 5 for now
+                            }
+                        }
+
+                        if(serie.InProduction) {
+                            $("#inProduction").html("This serie is currently in production.");
+                        }else {
+                            $("#inProduction").html("This serie is not in production.");
+                        }
+
+                        $("#rating").attr("style", "width:" + (serie.VoteAverage * 10) + "% !important");
+
+                        $("#btnEpisodeList").click(function () {
+                            main.go("players/serie-player.html?serieId=" + serieId);
+                        });
+
+                        //Keep the movie in a session
+                        sessionStorage.setItem('serie', JSON.stringify(serie));
+
+                        //Remove spinner since we got the data we need.
+                        $(".spinner-overlay").remove();
+                        $("#serie").addClass("show");
+                    });
+                }
+            });
+        </script>
+    </head>
+
+    <body>
+        <div id="customCSS"></div>
+        <div id="wrapper">
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
+            </div>
+            <div id="content-wrapper">
+                <div id="content">
+                    <div id="serie" class="modal fade in p-30">
+                        <div class="container center-block">
+                            <div class="row">
+                                <div class="col-sm-3 hidden-xs">
+                                    <img id="poster" alt="" src="" width="200" class="img-responsive img-thumbnail"  />
+                                    <div class="p-5 font-12">
+                                        <div id="status"></div>
+                                        <div id="inProduction"></div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-9 p-10">
+                                    <a class="pull-right font-24 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                                    <h1 id="title"></h1>
+                                    <h4 id="genres" class="mr-10" style="display:inline-block;"></h4>
+                                    <div class="stars-template" style="display:inline-block;">
+                                        <div id="rating" class="current-rating"></div>
+                                    </div>
+                                    <div id="plot" class="ptb-10" style="max-width:800px;"></div>
+                                    <div id="network">This serie is aired on </div>
+                                    <div class="ptb-10">
+                                        <button id="btnEpisodeList" class="btn btn-primary btn-sm"><i class='glyphicon glyphicon-list'></i>&nbsp;&nbsp;Episode list</button>
+                                    </div>
+                                    <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>
+                                    <div id="date" class="pt-5"><span class="glyphicon glyphicon-calendar"></span>&nbsp;&nbsp;</div>
+                                    <div id="info" class="pt-5"><span class="glyphicon glyphicon-info-sign"></span>&nbsp;&nbsp;</div>
+                                    <h4>Casts</h3>
+                                    <div id="casts"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop fade in" style="opacity:0.85;"></div>
+                </div>
+            </div>
+        </body>
+    </html>

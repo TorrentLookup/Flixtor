@@ -52,7 +52,6 @@
 
       // add it to the DOM
       player.el().appendChild(dialog);
-        window.location = "vlc-player.html";
     });
   });
 })();

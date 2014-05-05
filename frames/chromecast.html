@@ -17,7 +17,7 @@
         </script>
     </head>
 
-    <body onclick="main.reloadInstance();">
+    <body>
         <div id="wrapper">
             <div id="top-bar">
                 <div class="top-titlebar-text">Flixtor</div>
@@ -101,8 +101,7 @@
                             var parseString = require('xml2js').parseString;
                             var SSDP = require('node-ssdp');
                             var client = new SSDP();
-
-                            console.log(chrome);
+                            var superagent = require('superagent');
 
                             client.on('notify', function () {
                                 console.log('Got a notification.');
@@ -124,12 +123,12 @@
 
                                     //Setting up application resources
                                     var applicationUrl = res.headers['Application-Url'];
-                                    var applicationResourceUrl = applicationUrl + 'ChromeCast';
+                                    var applicationResourceUrl = applicationUrl + 'FlixtorCast';
 
-                                    console.log(applicationUrl);
+                                    console.log(applicationResourceUrl);
 
                                     //Sending initialization
-                                    rest.chain(mime, { mime: 'application/x-www-form-urlencoded.js' })({
+                                    rest.chain(mime)({
                                         path: applicationResourceUrl,
                                         method: 'POST',
                                         headers: {
@@ -141,64 +140,15 @@
                                             idle: 'windowclose'
                                         }
                                     }).then(function(res2){
+
                                         console.log("Second response");
                                         console.log(res2);
-
-                                        //Waiting for response
-                                        var inter = setInterval(function(){
-                                            rest({
-                                                path: applicationResourceUrl,
-                                                headers: {
-                                                    'Host': url.parse(data.LOCATION).host
-                                                }
-                                            }).then(function(res3){
-                                                clearInterval(inter);
-                                                console.log("Third response");
-                                                console.log(res3);
-
-                                                parseString(res3.entity, function (err, result) {
-                                                    console.log(result);
-                                                    var connectionUrl = result.service.servicedata[0].connectionSvcURL[0];
-                                                    console.log("URL: " + connectionUrl);
-
-                                                    //Sending new info to connectionUrl
-                                                    rest.chain(mime, { mime: 'application/json' })({
-                                                        path: connectionUrl,
-                                                        headers: {
-                                                            'Host': url.parse(data.LOCATION).host
-                                                        },
-                                                        entity: {
-                                                            channel: 0
-                                                        }
-                                                    }).then(function(res4){
-                                                        console.log("Fourth response");
-                                                        console.log(res4);
-
-                                                        //Retreiving new session url
-                                                        console.log("URL: " + res4.entity.URL);
-
-                                                        //Sending the motherfucking video
-                                                        var socket = new webSocket(res4.entity.URL, { origin: 'chrome-extension://boadgeojelhgndaghljhdicfkmllpafd' });
-                                                        socket.on('open', function(){
-                                                            console.log("Socket opened");
-                                                            socket.send('["cv",{"type":"launch_service","message":{"action":"launch","activityType":"mirror_tab","activityId":"l8z8p96u4yjy","initParams":{"tab_id":-2,"settings":{"videoBitrate":2500,"minVideoBitrate":2000,"maxVideoBitrate":2500,"videoQuality":56,"minWidth":1280,"minHeight":720,"audioBitrate":128,"useOpus":true,"bufferedMode":"on","bufferSizeMillis":500,"maxFrameRate":30,"enablePacing":true,"enableAudioTcp":false,"enableVideoTcp":false,"enableAudioNack":true,"captureSurface":"desktop","lowFpsMode":false,"zoomModeEnabled":true,"preferredVideoCodec":"CAST1"}},"senderId":"sender-qfmvlvl07k01","receiverId":"local:1","disconnectPolicy":"stop"}}]');
+                                        console.log(res2.headers['Location']);
 
 
-                                                        });
 
-                                                        socket.on('message', function(data, flags){
-                                                            console.log(data + " - ", typeof data);
-                                                            console.log(flags);
-                                                            var pong = JSON.stringify(["cm",{"type":"pong"}]);
-                                                            console.log(pong);
-                                                            socket.send(pong);
-                                                        });
+                                        console.log('send');
 
-
-                                                    });
-                                                });
-                                            });
-                                        }, 1000);
                                     });
                                 });
                             });
@@ -265,4 +215,60 @@
 ["cv",{"type":"activity","message":{"type":"webrtc","vg":false,"defaultPrevented":false,"qB":true,"activityId":"hpdaoi6cw7rw","message":"{\"type\":\"candidate\",\"label\":1,\"id\":\"video\",\"candidate\":\"a=candidate:4135066038 1 udp 1845501695 198.48.206.42 63206 typ srflx raddr 192.168.0.23 rport 50622 generation 0\\r\\n\"}"}}]
 
 ["cv",{"type":"activity_service","message":{"type":"remove_activity","vg":false,"defaultPrevented":false,"qB":true,"activityId":"u89zjugcxfk3"}}]
+//Waiting for response
+var inter = setInterval(function(){
+rest({
+path: applicationResourceUrl,
+headers: {
+'Host': url.parse(data.LOCATION).host
+}
+}).then(function(res3){
+clearInterval(inter);
+console.log("Third response");
+console.log(res3);
+
+parseString(res3.entity, function (err, result) {
+console.log(result);
+var connectionUrl = result.service.servicedata[0].connectionSvcURL[0];
+console.log("URL: " + connectionUrl);
+
+//Sending new info to connectionUrl
+rest.chain(mime, { mime: 'application/json' })({
+path: connectionUrl,
+headers: {
+'Host': url.parse(data.LOCATION).host
+},
+entity: {
+channel: 0
+}
+}).then(function(res4){
+console.log("Fourth response");
+console.log(res4);
+
+//Retreiving new session url
+console.log("URL: " + res4.entity.URL);
+
+//Sending the motherfucking video
+var socket = new webSocket(res4.entity.URL, { origin: 'chrome-extension://boadgeojelhgndaghljhdicfkmllpafd' });
+socket.on('open', function(){
+console.log("Socket opened");
+socket.send('{v:"12345"}');
+
+
+});
+
+socket.on('message', function(data, flags){
+console.log(data + " - ", typeof data);
+console.log(flags);
+var pong = JSON.stringify(["cm",{"type":"pong"}]);
+console.log(pong);
+socket.send(pong);
+});
+
+
+});
+});
+});
+}, 1000);
+
 -->

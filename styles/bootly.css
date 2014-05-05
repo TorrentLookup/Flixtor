@@ -1,6 +1,9 @@
 body{
-    color:#5C5C5C;
     overflow: hidden;
+    background: url('../images/bg-flixtor.jpg') no-repeat center center fixed;
+    -webkit-background-size: cover;
+    background-size: cover;
+    color: #e9e9e9;
 }
 
 a {
@@ -9,58 +12,72 @@ a {
 
 #content-wrapper
 {
-    margin-top: 30px;
+    margin-top: 38px;
 }
 
 /* Top bar */
 #top-bar {
-    background-color: #333333;
-    height: 32px;
-z-index: 999999;
-    color:white;
+    background-color: #efefef;
+    height: 40px;
+    z-index: 999999;
+    color:#333333;
     position:fixed;
     top:0;
     width: 100%;
-  -webkit-user-select: none;
-  -webkit-app-region: drag;
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
     border-bottom:thin solid black;
+
+    -moz-box-shadow: 0 0 20px 5px black;
+    -webkit-box-shadow: 0 0 20px 5px black;
+    box-shadow: 0 0 20px 5px black;
 }
 
-.top-titlebar-text {  position: absolute;
-    left:10px;
-        line-height: 32px;
+.top-titlebar-text {
+    text-align: center;
+    line-height: 40px;
 }
 
 .top-titlebar-close-button {
-  position: absolute;
-  right: 10px;
-    margin-top: 6px;
-  -webkit-app-region: no-drag;
+    position: absolute;
+    right: 10px;
+    margin-top: 10px;
+    -webkit-app-region: no-drag;
     cursor: pointer;
 }
 
 .top-titlebar-settings-button {
-  position: absolute;
-  right: 40px;
-    margin-top: 6px;
-  -webkit-app-region: no-drag;
+    position: absolute;
+    right: 40px;
+    margin-top: 10px;
+    -webkit-app-region: no-drag;
     cursor: pointer;
 }
 
 .top-titlebar-minimize-button {
-  position: absolute;
-  right: 70px;
-    margin-top: 11px;
-  -webkit-app-region: no-drag;
+    position: absolute;
+    right: 70px;
+    margin-top: 14px;
+    -webkit-app-region: no-drag;
     cursor: pointer;
 }
 
 .top-titlebar-fullscreen-button {
-  position: absolute;
-  right: 40px;
-    margin-top: 6px;
-  -webkit-app-region: no-drag;
+    position: absolute;
+    right: 40px;
+    margin-top: 10px;
+    -webkit-app-region: no-drag;
     cursor: pointer;
+}
+
+.top-titlebar-back-button {
+    position: absolute;
+    left: 10px;
+    margin-top: 10px;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    -webkit-transform: rotate(180deg);
+    -webkit-transform: scale(-1, 1);
 }
 
 .top-titlebar-close-button:hover, .top-titlebar-settings-button:hover
@@ -73,17 +90,16 @@ z-index: 999999;
     position: fixed;
     margin-top: 2px;
     height: 100%;
-    border-right: thin solid #D9D9D9;
+    border-right: thin solid black;
     padding-top: 10px;
-    background-color: #eee;
+    background: rgba(0, 0, 0, 0.6);
     -webkit-animation: slide 0.5s forwards;
 }
 
 #side-bar-full
 {
     width: 150px;
-    left:-150px;
-
+    left:-150px;s
 }
 
 #side-bar-small
@@ -102,16 +118,27 @@ z-index: 999999;
     list-style: none;
 }
 
-.side-bar ul li
+#side-bar-full ul li
+{
+    margin: 10px 0 10px 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+#side-bar-full ul li:hover, #side-bar-full ul li.on
+{
+    border-right: 3px solid #e9e9e9;
+}
+
+#side-bar-small ul li
 {
     padding: 5px 10px;
     cursor: pointer;
-    border-bottom: 1px solid #e7e7e7;
 }
 
-.side-bar ul li:hover, .side-bar ul li.on
+#side-bar-small ul li:hover, #side-bar-small ul li.on
 {
-    background-color: #333333;
+    background: rgba(0,0,0,0.8);
 }
 
 .side-bar ul li:hover a, .side-bar ul li.on a
@@ -122,7 +149,7 @@ z-index: 999999;
 .side-bar ul li a
 {
     text-decoration: none;
-    color: #333333;
+    color: #e9e9e9;
 }
 
 /* Content */
@@ -133,18 +160,18 @@ z-index: 999999;
 }
 
 @media all and (max-width:768px) {
-#content
-{
-    margin-left: 35px;
-}
+    #content
+    {
+        margin-left: 35px;
+    }
 }
 
 
 /* Tables */
 .table-light th{font-weight:bold;padding:5px 10px;border-bottom:thin solid #ccc;}
 .table-light td{padding:5px;}
-.table-normal th{font-weight:bold;padding:5px 10px;border-bottom:1px solid #ccc;}
-.table-normal td{padding:5px;border-bottom:1px solid #e6e6e6;}
+.table-normal th{padding:5px 10px; font-weight: normal;}
+.table-normal td{padding:2px;color:#c7c7c7}
 .table-box{border:thin solid #ccc;padding:5px;}
 .table-box th{font-weight:bold;padding:10px;border-bottom:1px dashed #ccc;}
 .table-box td{padding:5px;border-bottom:1px solid #e6e6e6;}
@@ -218,9 +245,9 @@ z-index: 999999;
 
 
 .text-ellipsis {
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .color-light-black{color:#333333;}
@@ -240,13 +267,13 @@ text-overflow: ellipsis;
 .text-right{text-align:right;}
 
 .img-box-contour {
-padding: 4px;
-background-color: #fff;
-border: 1px solid #ccc;
-border: 1px solid rgba(0, 0, 0, 0.2);
--webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
--moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 4px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 
@@ -264,57 +291,65 @@ button:hover
 
 }
 
+a:hover {
+    color: inherit;
+    opacity: 0.7;
+}
+
 .black-input:hover
 {
-        outline:none;
-    -webkit-appearance:none;
-    box-shadow: none;
-    -webkit-box-shadow:  0 0 1px 1px rgba(0,0,0,1) !important;
-    border:thin solid #D5D5D5 !important;
+    outline:none !important;
+    -webkit-appearance:none !important;
+    box-shadow: none !important;
+    -webkit-box-shadow:  0 0 1px 1px rgba(0,0,0,1) !important ;
+    border:none !important;
+
 }
 
 .black-input
-{    background-color: #1B1B1B;
+{
+    background: rgba(255,255,255,0.3);
     color:#D5D5D5;
-    border: thin solid #575757;
+    border: none;
+    border-radius: 0;
 }
 
 .header {
-border-bottom: 1px solid #dddddd;
+    border-bottom: 1px solid #dddddd;
 }
 
 /* bootstrap overrides */
 .badge{
-   color:#3B5999;
-   background-color:#fff;
+    color:#3B5999;
+    background-color:#fff;
 }
 .badge:hover, .badge-inverse{
-   background-color:#3B5999;
-   color:#fff;
+    background-color:#3B5999;
+    color:#fff;
 }
 
 .page-header {
-  margin-top: 55px;
-  padding-top: 9px;
-  border-top:1px solid #eeeeee;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:2px;
+    margin-top: 55px;
+    padding-top: 9px;
+    border-top:1px solid #eeeeee;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:2px;
 }
 
 .panel-default .panel-heading {
-  background-color:#f9fafb;
-  color:#555555;
+    background-color:#f9fafb;
+    color:#555555;
 }
 
 .modal-header, .modal-footer {
-	background-color:#f2f2f2;
+    background-color:#f2f2f2;
     font-weight:800;
     font-size:12px;
 }
 
 .modal-footer {
-margin-top: 0;
+    margin-top: 0;
 }
 
 .modal-footer i, .well i {
@@ -323,49 +358,49 @@ margin-top: 0;
 }
 
 .modal-body {
-	padding:0px;
+    padding:0px;
 }
 
 .modal-body textarea.form-control
 {
-   resize: none;
-   border:0;
-   box-shadow:0 0 0;
+    resize: none;
+    border:0;
+    box-shadow:0 0 0;
 }
 
 .modal
 {
     overflow-y: hidden;
-    top:30px;
+    top:50px;
 }
 
 small.text-muted {
-  font-family:courier,courier-new,monospace;
+    font-family:courier,courier-new,monospace;
 }
 
 .alert {
- margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 ::-webkit-scrollbar-track
 {
- -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
- background-color: #ccc;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    background-color: #ccc;
 }
 
 ::-webkit-scrollbar
 {
- width: 6px;
- background-color: #F5F5F5;
+    width: 6px;
+    background-color: #F5F5F5;
 }
 ::-webkit-scrollbar-thumb
 {
- background-color: #333;
+    background-color: #626262;
 }
 
 div.spinner-overlay {
     position: fixed;
-    z-index: 99999;
+    z-index: 1050;
     width: 100%;
     height: 100%;
     left:0;
@@ -376,4 +411,16 @@ div.spinner-overlay {
     background-position: center;
     background-repeat: no-repeat;
     background-size:40px;
-    }
+}
+
+.stars-template {
+    background: url('../images/tiny-star.png');
+    height: 14px;
+    width: 69px;
+}
+
+.current-rating {
+    background: url('../images/tiny-star-filled.png');
+    height: 14px;
+    width: 72.45%;
+}

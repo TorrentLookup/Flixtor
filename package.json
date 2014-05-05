@@ -2,17 +2,17 @@
     "main": "app://host/frames/movies.html",
     "name": "Flixtor",
     "description": "Movie and serie streamer",
-    "version": "0.1.3",
+    "version": "1.0.0",
     "window": {
         "title": "Flixtor",
         "icon": "images/flixtor-ico.png",
-        "toolbar": true,
+        "toolbar": false,
         "frame": false,
         "width": 1280,
         "height": 770,
         "position": "center",
         "min_width": 640,
-        "min_height": 480
+        "min_height": 600
     },
     "webkit": {
         "plugin": true
@@ -23,7 +23,7 @@
         "nodealytics": "~0.0.5",
         "numeral": "~1.5.3",
         "opensubtitles-client": "~1.1.0",
-        "peerflix": "~0.5.2",
+        "peerflix": "~0.8.6",
         "request": "~2.34.0",
         "subsync": "~0.0.1",
         "wcf.js": "~0.0.6"

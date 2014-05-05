@@ -1,365 +1,437 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-    <title>Flixtor</title>
-    <!-- CSS -->
-    <link href="../styles/bootstrap.min.css" rel="stylesheet">
-    <link href="../styles/bootly.css" rel="stylesheet">
+    <head>
+        <title>Flixtor</title>
+        <!-- CSS -->
+        <link href="../styles/bootstrap.min.css" rel="stylesheet">
+        <link href="../styles/bootly.css" rel="stylesheet">
 
-    <!-- Scripts -->
-    <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
-    <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
-    <script src="../js/extensions/bootstrap-paginator.min.js"></script>
+        <!-- Scripts -->
+        <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+        <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
+        <script src="../js/extensions/bootstrap-paginator.min.js"></script>
 
-    <!-- Modules -->
-    <script>
-        var main = require('../js/main.js');
-        var callwcf = require('../js/callwcf.js');
-        main.reloadInstance();
-        callwcf.reloadInstance();
+        <!-- Modules -->
+        <script>
+            var main = require('../js/main.js');
+            var callwcf = require('../js/callwcf.js');
 
-        $(document).ready(function() {
-            //Scroll bar
-            $(window).resize(function() {
-                $("#torrents").css('max-height', ($(window).height() - 95) + "px");
+            $(document).ready(function() {
+                //Scroll bar
+                $(window).resize(function() {
+                    $("#torrents").css('max-height', ($(window).height() - 95) + "px");
+                });
+
+                $(window).resize();
+
+                //Search key press (enter)
+                $('#txtTorrentSearch').keypress(function(e) {
+                    if (e.keyCode == 13)
+                        $('#btnSearchTorrent').click();
+                });
             });
+        </script>
+    </head>
 
-            $(window).resize();
+    <body>
+        <style>
+            .nav-tabs > li > a {
+                margin-right: 2px;
+                line-height: 1.428571429;
+                border: 1px solid transparent;
+                color: #C4C4C4;
+            }
 
-            //Search key press (enter)
-            $('#txtTorrentSearch').keypress(function(e) {
-                if (e.keyCode == 13)
-                    $('#btnSearchTorrent').click();
-            });
-        });
-    </script>
-</head>
+            .nav >li > a {
+                position: relative;
+                display: block;
+                padding: 5px 10px;
+            }
 
-<body onclick="main.reloadInstance();">
-    <div id="wrapper">
-        <div id="top-bar">
-            <div class="top-titlebar-text">Flixtor</div>
-            <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
-                <span class="glyphicon glyphicon-minus"></span>
+            .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+                color: #E4E4E4;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: 1px solid transparent;
+                cursor: default;
+            }
+
+            .nav-tabs>li > a:hover, .nav-tabs > li > a:focus {
+                color: #E4E4E4;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: 1px solid transparent;
+                cursor: pointer;
+            }
+
+            .nav-tabs {
+                border-bottom: 1px solid #8992A2;
+            }
+
+            .pagination {
+                display: inline-block;
+                padding-left: 0;
+                margin: 20px 0;
+                border-radius: 4px;
+            }
+
+            .pagination>li:first-child>a, .pagination>li:first-child>span {
+                margin-left: 0;
+                border-bottom-left-radius: 4px;
+                border-top-left-radius: 4px;
+            }
+
+            .pagination>.active>a, .pagination>.active>span, .pagination>.active>a:hover, .pagination>.active>span:hover, .pagination>.active>a:focus, .pagination>.active>span:focus {
+                z-index: 2;
+                color: #fff;
+                background-color: rgba(0, 0, 0, 0.61);
+                border-color: transparent;
+                cursor: default;
+            }
+
+            .pagination>li>a, .pagination>li>span {
+                position: relative;
+                float: left;
+                padding: 6px 12px;
+                line-height: 1.428571429;
+                text-decoration: none;
+                color: #D6D6D6;
+                background-color: rgba(0, 0, 0, 0.35);
+                border: transparent;
+                margin-left: -1px;
+            }
+        </style>
+        <div id="wrapper">
+            <div id="top-bar">
+                <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+                    <span class="glyphicon glyphicon-share-alt"></span>
+                </div>
+                <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+                    <span class="glyphicon glyphicon-minus"></span>
+                </div>
+                <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+                    <span class="glyphicon glyphicon-fullscreen"></span>
+                </div>
+                <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </div>
+                <div class="top-titlebar-text">Flixtor</div>
             </div>
-            <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
-                <span class="glyphicon glyphicon-fullscreen"></span>
-            </div>
-            <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
-                <span class="glyphicon glyphicon-remove"></span>
-            </div>
-        </div>
-        <div id="content-wrapper">
-            <div id="side-bar-full" class="hidden-xs side-bar">
-                <ul>
-                    <li id="side-bar-li-movies" onclick="main.changeFrame('movies')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
-                    </li>
-                    <li id="side-bar-li-series" onclick="main.changeFrame('series')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
-                    </li>
-                    <li id="side-bar-li-torrents" class="on" onclick="main.changeFrame('torrents')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
-                    </li>
-                </ul>
-            </div>
-            <div id="side-bar-small" class="visible-xs side-bar">
-                <ul>
-                    <li id="side-bar-li-movies-sm" onclick="main.changeFrame('movies')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-film"></span>
-                        </a>
-                    </li>
-                    <li id="side-bar-li-series-sm" onclick="main.changeFrame('series')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-expand"></span>
-                        </a>
-                    </li>
-                    <li id="side-bar-li-torrents-sm" class="on" onclick="main.changeFrame('torrents')">
-                        <a href="#">
-                            <span class="glyphicon glyphicon-th-list"></span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div id="popup"></div>
-            <div id="content">
-                <script>
-                    changeFilter("seeds,desc");
-                    changeCategory("movies");
-                    applySearch();
+            <div id="content-wrapper">
+                <div id="side-bar-full" class="hidden-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
+                        </li>
+                        <li id="side-bar-li-series" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
+                        </li>
+                        <li id="side-bar-li-torrents" class="on" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="side-bar-small" class="visible-xs side-bar">
+                    <ul>
+                        <li id="side-bar-li-movies-sm" onclick="main.changeFrame('movies')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-film"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-series-sm" onclick="main.changeFrame('series')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-expand"></span>
+                            </a>
+                        </li>
+                        <li id="side-bar-li-torrents-sm" class="on" onclick="main.changeFrame('torrents')">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-th-list"></span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="popup"></div>
+                <div id="content">
+                    <script type="text/javascript">
 
-                    var torrentSkip;
-                    var torrentMax;
-                    var torrentSelectedValueCategory;
-                    var torrentRandomSort;
-                    var torrentRandomSeed;
-                    var totalPage;
-
-                    function createPagerOptions(reset) {
-                        var options;
-                        if (!reset) {
-                            options = {
-                                totalPages: totalPage,
-                                bootstrapMajorVersion: 3,
-                                onPageClicked: function(e, originalEvent, type, page) {
-                                    torrentSkip = ((page - 1) * torrentMax);
-                                    applySearch();
-                                    $("#torrents").animate({
-                                        scrollTop: 0
-                                    }, "slow");
-                                }
-                            }
-                        } else {
-                            options = {
-                                currentPage: 1,
-                                totalPages: totalPage,
-                                bootstrapMajorVersion: 3,
-                                onPageClicked: function(e, originalEvent, type, page) {
-                                    torrentSkip = ((page - 1) * torrentMax);
-                                    applySearch();
-                                    $("#torrents").animate({
-                                        scrollTop: 0
-                                    }, "slow");
-                                }
-                            }
-                        }
-                        return options;
-                    }
-
-                    function changeCategory(name) {
-                        resetSkipMax();
-                        $("#categoryMenu li").each(function(index) {
-                            $(this).removeClass("active");
+                        $(document).ready(function () {
+                            console.log('ready');
+                            changeFilter("seeds,desc");
+                            changeCategory("movies");
+                            applySearch();
                         });
 
-                        switch (name) {
-                            //            case 'all':
-                            //                torrentSelectedValueCategory = ' CategoryId:0 OR CategoryId:7 OR CategoryId:1 OR CategoryId:6';
-                            //                $('#linkAll').addClass('active');
-                            //                break;
-                            case 'movies':
-                                torrentSelectedValueCategory = ' +CategoryId:0';
-                                $('#linkMovies').addClass('active');
-                                break;
-                            case 'anime':
-                                torrentSelectedValueCategory = ' +CategoryId:7';
-                                $('#linkAnime').addClass('active');
-                                break;
-                            case 'series':
-                                torrentSelectedValueCategory = ' +CategoryId:1';
-                                $('#linkSeries').addClass('active');
-                                break;
-                            case 'videos':
-                                torrentSelectedValueCategory = ' +CategoryId:6';
-                                $('#linkVideos').addClass('active');
-                                break;
-                        }
-                        $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
-                        applySearch();
-                    }
+                        var torrentSkip;
+                        var torrentMax;
+                        var torrentSelectedValueCategory;
+                        var torrentRandomSort;
+                        var torrentRandomSeed;
+                        var totalPage;
 
-                    var searchValue;
-
-                    function changeSearchText() {
-                        resetSkipMax();
-                        searchValue = $('#txtTorrentSearch').val();
-                        $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
-                        applySearch();
-                    }
-
-                    var torrentColumnName, torrentSortReverse, torrentSortTypeId;
-
-                    function changeFilter(name) {
-                        resetSkipMax();
-                        switch (name) {
-                            case "seeds,desc":
-                                torrentColumnName = "Seeds";
-                                torrentSortReverse = "true";
-                                torrentSortTypeId = 4;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Seeds");
-                                break;
-                            case "leechs,desc":
-                                torrentColumnName = "Leechs";
-                                torrentSortReverse = "true";
-                                torrentSortTypeId = 4;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Leechs");
-                                break;
-                            case "addeddate,desc":
-                                torrentColumnName = "AddedDateTicks";
-                                torrentSortReverse = "true";
-                                torrentSortTypeId = 6;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Latest");
-                                break;
-                            case "addeddate,asc":
-                                torrentColumnName = "AddedDateTicks";
-                                torrentSortReverse = "false";
-                                torrentSortTypeId = 6;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Oldest");
-                                break;
-                            case "size,desc":
-                                torrentColumnName = "Size";
-                                torrentSortReverse = "true";
-                                torrentSortTypeId = 6;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Biggest size");
-                                break;
-                            case "size,asc":
-                                torrentColumnName = "Size";
-                                torrentSortReverse = "false";
-                                torrentSortTypeId = 6;
-                                torrentRandomSort = false;
-                                torrentRandomSeed = 0;
-                                $("#filterByStatus").text("Smallest size");
-                                break;
-                        }
-                        $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
-                        applySearch();
-                    }
-
-                    function resetSkipMax() {
-                        torrentSkip = 0;
-                        torrentMax = 12;
-                    }
-
-                    function applySearch() {
-                        $("#wrapper").append("<div class='spinner-overlay'></div>");
-                        if (!torrentSelectedValueCategory) {
-                            torrentSelectedValueCategory = "";
+                        function createPagerOptions(reset) {
+                            var options;
+                            if (!reset) {
+                                options = {
+                                    totalPages: totalPage,
+                                    bootstrapMajorVersion: 3,
+                                    onPageClicked: function(e, originalEvent, type, page) {
+                                        torrentSkip = ((page - 1) * torrentMax);
+                                        applySearch();
+                                        $("#torrents").animate({
+                                            scrollTop: 0
+                                        }, "slow");
+                                    }
+                                }
+                            } else {
+                                options = {
+                                    currentPage: 1,
+                                    totalPages: totalPage,
+                                    bootstrapMajorVersion: 3,
+                                    onPageClicked: function(e, originalEvent, type, page) {
+                                        torrentSkip = ((page - 1) * torrentMax);
+                                        applySearch();
+                                        $("#torrents").animate({
+                                            scrollTop: 0
+                                        }, "slow");
+                                    }
+                                }
+                            }
+                            return options;
                         }
 
+                        function changeCategory(name) {
+                            resetSkipMax();
+                            $("#categoryMenu li").each(function(index) {
+                                $(this).removeClass("active");
+                            });
 
-                        callwcf.searchTable("Torrents", "Name", searchValue, torrentSelectedValueCategory + " +StatusId:2", torrentColumnName, torrentSortReverse, torrentSortTypeId, torrentRandomSort, torrentRandomSeed, torrentSkip, torrentMax, function(results) {
+                            switch (name) {
+                                case 'movies':
+                                    torrentSelectedValueCategory = ' +CategoryId:0';
+                                    $('#linkMovies').addClass('active');
+                                    break;
+                                case 'anime':
+                                    torrentSelectedValueCategory = ' +CategoryId:7';
+                                    $('#linkAnime').addClass('active');
+                                    break;
+                                case 'series':
+                                    torrentSelectedValueCategory = ' +CategoryId:1';
+                                    $('#linkSeries').addClass('active');
+                                    break;
+                                case 'videos':
+                                    torrentSelectedValueCategory = ' +CategoryId:6';
+                                    $('#linkVideos').addClass('active');
+                                    break;
+                            }
+                            $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
+                            applySearch();
+                        }
 
-                            totalPage = Math.ceil(results.Total / torrentMax);
-                            $('#torrentPager').bootstrapPaginator(createPagerOptions(false));
-                            $("#table-torrent-body").empty();
-                            $(results.Torrents).each(function(index) {
-                                var torrent = $(this)[0];
+                        var searchValue;
 
-                                $("#table-torrent-body").append("<tr>" +
-                                    "<td style='word-break:break-all;'>" + torrent.Name + "</td>" +
-                                    "<td class='text-success'>" + torrent.Seeds + "</td>" +
-                                    "<td class='text-danger'>" + torrent.Leechs + "</td>" +
-                                    "<td>" + torrent.FormattedSize + "</td>" +
-                                    "<td>" + torrent.CategoryName + "</td>" +
-                                    "<td>" + torrent.AddedDate + "</td>" +
-                                    "<td>" +
-                                    "<div style='padding-top:4px'>" +
-                                    "   <button type='button' class='btn btn-xs btn-success pull-left mb-5 mr-5' onclick=\"main.playTorrent('" + torrent.Info_Hash + "', 'torrents')\">" +
-                                    "      <i class='glyphicon glyphicon-play'></i>&nbsp;Play</button>" +
-                                    //                                    " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
-                                    //                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +
-                                    "</div>" +
-                                    "<div class='clearfix'></div>" +
-                                    "</td>" +
-                                    "</tr>");
+                        function changeSearchText() {
+                            resetSkipMax();
+                            searchValue = $('#txtTorrentSearch').val();
+                            $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
+                            applySearch();
+                        }
+
+                        var torrentColumnName, torrentSortReverse, torrentSortTypeId;
+
+                        function changeFilter(name) {
+                            resetSkipMax();
+                            switch (name) {
+                                case "seeds,desc":
+                                    torrentColumnName = "Seeds";
+                                    torrentSortReverse = "true";
+                                    torrentSortTypeId = 4;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Seeds");
+                                    break;
+                                case "leechs,desc":
+                                    torrentColumnName = "Leechs";
+                                    torrentSortReverse = "true";
+                                    torrentSortTypeId = 4;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Leechs");
+                                    break;
+                                case "addeddate,desc":
+                                    torrentColumnName = "TorrentId";
+                                    torrentSortReverse = "true";
+                                    torrentSortTypeId = 4;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Latest");
+                                    break;
+                                case "addeddate,asc":
+                                    torrentColumnName = "TorrentId";
+                                    torrentSortReverse = "false";
+                                    torrentSortTypeId = 4;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Oldest");
+                                    break;
+                                case "size,desc":
+                                    torrentColumnName = "Size";
+                                    torrentSortReverse = "true";
+                                    torrentSortTypeId = 6;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Biggest size");
+                                    break;
+                                case "size,asc":
+                                    torrentColumnName = "Size";
+                                    torrentSortReverse = "false";
+                                    torrentSortTypeId = 6;
+                                    torrentRandomSort = false;
+                                    torrentRandomSeed = 0;
+                                    $("#filterByStatus").text("Smallest size");
+                                    break;
+                            }
+                            $('#torrentPager').bootstrapPaginator(createPagerOptions(true));
+                            applySearch();
+                        }
+
+                        function resetSkipMax() {
+                            torrentSkip = 0;
+                            torrentMax = 14;
+                        }
+
+                        function viewTorrent(torrentId) {
+                            main.go("players/player.html?torrentId=" + torrentId);
+                        }
+
+                        function applySearch() {
+                            $("#wrapper").append("<div class='spinner-overlay'></div>");
+                            if (!torrentSelectedValueCategory) {
+                                torrentSelectedValueCategory = "";
+                            }
+
+
+                            callwcf.searchTable("Torrents", "Name", searchValue, torrentSelectedValueCategory + " +StatusId:2", torrentColumnName, torrentSortReverse, torrentSortTypeId, torrentRandomSort, torrentRandomSeed, torrentSkip, torrentMax, function(results) {
+
+                                totalPage = Math.ceil(results.Total / torrentMax);
+                                $('#torrentPager').bootstrapPaginator(createPagerOptions(false));
+                                $("#table-torrent-body").empty();
+                                $(results.Torrents).each(function(index) {
+                                    var torrent = $(this)[0];
+
+                                    $("#table-torrent-body").append("<tr>" +
+                                                                    "<td style='word-break:break-all;'>" + torrent.Name + "</td>" +
+                                                                    "<td class='text-success'>" + torrent.Seeds + "</td>" +
+                                                                    "<td class='text-danger'>" + torrent.Leechs + "</td>" +
+                                                                    "<td>" + torrent.FormattedSize + "</td>" +
+                                                                    "<td>" + torrent.CategoryName + "</td>" +
+                                                                    "<td>" + torrent.AddedDate + "</td>" +
+                                                                    "<td>" +
+                                                                    "<div style='padding-top:4px'>" +
+                                                                    "   <button type='button' class='btn btn-xs btn-default pull-left mb-5 mr-5' onclick='viewTorrent(" + torrent.TorrentId + ");'>" +
+                                                                    "      <i class='glyphicon glyphicon-list-alt'></i>&nbsp;Details</button>" +
+                                                                    /*                                                     " <button type='button' class='btn btn-xs btn-primary pull-left'>" +
+                                                                    "    <i class='glyphicon glyphicon-list-alt'></i>&nbsp;&nbsp;Details</button>" +*/
+                                                                    "</div>" +
+                                                                    "<div class='clearfix'></div>" +
+                                                                    "</td>" +
+                                                                    "</tr>");
+                                });
+
+
+
+                                $(".spinner-overlay").remove();
                             });
 
 
-
-                            $(".spinner-overlay").remove();
-                        });
-
-
-                    }
-                </script>
+                        }
+                    </script>
 
 
-                <div class="p-10">
-                    <div class="row" style="margin-right:0;">
-                        <div class="col-lg-9">
-                            <div class="input-group">
-                                <input id="txtTorrentSearch" type="text" class="form-control" placeholder="Torrent name...">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-primary" type="button" id="btnSearchTorrent" onclick="changeSearchText();">Search</button>
-                                    <span class="ml-10">
-                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter by
-                                            <span id="filterByStatus"></span>
-                                            <span class="caret"></span>
+                    <div class="p-10">
+                        <div class="row" style="margin-right:0;">
+                            <div class="col-lg-9">
+                                <div class="input-group">
+                                    <input id="txtTorrentSearch" type="text" class="form-control black-input" placeholder="Torrent name...">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-default" type="button" id="btnSearchTorrent" onclick="changeSearchText();">
+                                            <span class="glyphicon glyphicon-search"></span>
                                         </button>
-                                        <ul class="dropdown-menu pull-right" role="menu">
-                                            <li>
-                                                <a onclick="changeFilter('seeds,desc');">Seeds</a>
-                                            </li>
-                                            <li>
-                                                <a onclick="changeFilter('leechs,desc');">Leechs</a>
-                                            </li>
-                                            <li class="divider"></li>
-                                            <li>
-                                                <a onclick="changeFilter('addeddate,desc');">Latest</a>
-                                            </li>
-                                            <li>
-                                                <a onclick="changeFilter('addeddate,asc');">Oldest</a>
-                                            </li>
-                                            <li class="divider"></li>
-                                            <li>
-                                                <a onclick="changeFilter('size,asc');">Smallest size</a>
-                                            </li>
-                                            <li>
-                                                <a onclick="changeFilter('size,desc');">Biggest size</a>
-                                            </li>
-                                        </ul>
+                                        <span class="ml-10">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Filter by
+                                                <span id="filterByStatus"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu pull-right" role="menu">
+                                                <li>
+                                                    <a onclick="changeFilter('seeds,desc');">Seeds</a>
+                                                </li>
+                                                <li>
+                                                    <a onclick="changeFilter('leechs,desc');">Leechs</a>
+                                                </li>
+                                                <li class="divider"></li>
+                                                <li>
+                                                    <a onclick="changeFilter('addeddate,desc');">Latest</a>
+                                                </li>
+                                                <li>
+                                                    <a onclick="changeFilter('addeddate,asc');">Oldest</a>
+                                                </li>
+                                                <li class="divider"></li>
+                                                <li>
+                                                    <a onclick="changeFilter('size,asc');">Smallest size</a>
+                                                </li>
+                                                <li>
+                                                    <a onclick="changeFilter('size,desc');">Biggest size</a>
+                                                </li>
+                                            </ul>
+                                        </span>
                                     </span>
-                                </span>
 
+                                </div>
+                                <!-- /input-group -->
                             </div>
-                            <!-- /input-group -->
+                            <!-- /.col-lg-6 -->
+                            <div class="clearfix"></div>
                         </div>
-                        <!-- /.col-lg-6 -->
-                        <div class="clearfix"></div>
-                    </div>
-                    <div id="torrents" style="overflow-y:auto !important;">
-                        <div class="mr-10">
-                            <ul id="categoryMenu" class="nav nav-tabs mt-10">
-                                <li id="linkAnime">
-                                    <a onclick="changeCategory('anime');">Anime</a>
-                                </li>
-                                <li id="linkMovies" class="active">
-                                    <a onclick="changeCategory('movies');">Movies</a>
-                                </li>
-                                <li id="linkSeries">
-                                    <a onclick="changeCategory('series');">Series</a>
-                                </li>
-                                <li id="linkVideos">
-                                    <a onclick="changeCategory('videos');">Videos</a>
-                                </li>
-                            </ul>
+                        <div id="torrents" style="overflow-y:auto !important;">
+                            <div class="mr-10">
+                                <ul id="categoryMenu" class="nav nav-tabs mt-20">
+                                    <li id="linkAnime">
+                                        <a onclick="changeCategory('anime');">Anime</a>
+                                    </li>
+                                    <li id="linkMovies" class="active">
+                                        <a onclick="changeCategory('movies');">Movies</a>
+                                    </li>
+                                    <li id="linkSeries">
+                                        <a onclick="changeCategory('series');">Series</a>
+                                    </li>
+                                    <li id="linkVideos">
+                                        <a onclick="changeCategory('videos');">Videos</a>
+                                    </li>
+                                </ul>
 
-                            <table class="table-normal table-header-left table-align-middle width-100">
-                                <thead>
-                                    <tr>
-                                        <th>Torrent Name</th>
-                                        <th>Seeds</th>
-                                        <th>Leechs</th>
-                                        <th>Size</th>
-                                        <th>Category</th>
-                                        <th>Added date</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-torrent-body">
-                                </tbody>
-                            </table>
-                            <ul id="torrentPager"></ul>
+                                <table class="table-normal table-header-left table-align-middle mt-5 width-100">
+                                    <thead>
+                                        <tr>
+                                            <th>Torrent Name</th>
+                                            <th>Seeds</th>
+                                            <th>Leechs</th>
+                                            <th>Size</th>
+                                            <th>Category</th>
+                                            <th>Added date</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-torrent-body">
+                                    </tbody>
+                                </table>
+                                <ul id="torrentPager"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-</body>
+        </body>
 
-</html>
+    </html>
