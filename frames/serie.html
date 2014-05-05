@@ -92,7 +92,7 @@
 
                         $("#rating").attr("style", "width:" + (serie.VoteAverage * 10) + "% !important");
 
-                        $("#btnPlay").click(function () {
+                        $("#btnEpisodeList").click(function () {
                             main.go("players/serie-player.html?serieId=" + serieId);
                         });
 
@@ -148,7 +148,6 @@
                                     <div id="plot" class="ptb-10" style="max-width:800px;"></div>
                                     <div id="network">This serie is aired on </div>
                                     <div class="ptb-10">
-                                        <button id="btnPlay" class="btn btn-success btn-sm"><i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Watch now</button>
                                         <button id="btnEpisodeList" class="btn btn-primary btn-sm"><i class='glyphicon glyphicon-list'></i>&nbsp;&nbsp;Episode list</button>
                                     </div>
                                     <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>

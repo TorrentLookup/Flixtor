@@ -102,6 +102,7 @@
 
             $(window).resize(function() {
                 setVLC();
+                $("#source-content").css("max-height", ($(window).height() - 160) + "px");
             }).trigger("resize");
 
 
@@ -243,7 +244,7 @@
                 var video = videojs("torrentVideo");
                 video.dispose();
                 $('#torrentVideo').remove();
-                $("#video-container").html("<embed id='VLC' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' id='vlc' autoplay='yes' target='http://127.0.0.1:3549/' />");
+                $("#video-container").html("<embed id='VLC' type='application/x-vlc-plugin' pluginspage='http://www.videolan.org' style='position:absolute; top:40px;' width='100%' height='94%' autoplay='yes' target='http://127.0.0.1:3549/' />");
                 setVLC();
             }
 
@@ -368,7 +369,7 @@
                 </div>
                 <div id="right-nav" class="hidden-xs hidden-sm" style="position:absolute; top:40px; z-index:1; background: rgba(0,0,0,0.8); bottom:0; width:250px; right:0; border-left:thin solid black">
                     <div style="margin:10px 10px 0 10px;">
-                        <a class="pull-right font-18 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>
+                        <!--                        <a class="pull-right font-18 color-white" onclick="main.goBack();"><i class='glyphicon glyphicon-remove-circle'></i></a>-->
                         <h3 id="title"></h3>
                         <ul id="top-nav" class="list-inline">
                             <li><a id="btnShowSource" onclick="showSource();">Source</a></li>
@@ -376,7 +377,7 @@
                         </ul>
                     </div>
                     <div id="nav-content">
-                        <ul id="source-content" class="list-unstyled" style="overflow-y:scroll; overflow-x:hidden;">
+                        <ul id="source-content" class="list-unstyled" style="overflow: auto;">
                         </ul>
                         <div id="info-content" class="hide" style="margin:0 10px;">
                             <h6 id="info-torrent-name" style="word-break:break-all;"></h6>
@@ -475,7 +476,7 @@
 
                     //Show top bar
                     if($("#top-bar").is(":hidden")) {
-                        $("#top-bar").slideDown();
+                        $("#top-bar").show();
                     }
 
                     //Show right nav
@@ -493,12 +494,21 @@
 
                 //Mouse is idle
                 timeout = setTimeout(function() {
-                    $("#top-bar").slideUp();
+                    $("#top-bar").hide();
                     $(".vjs-control-bar").removeClass("vjs-fade-in").addClass("vjs-fade-out");
                     $("#right-nav").hide();
                     $("body").css("cursor","none");
                     setVLC();
                 }, 3000);
+            });
+
+            $(window).mouseout(function( event ) {
+                if($("#top-bar").is(":hover") || $("#right-nav").is(":hover") || !$("#loader").hasClass("hide") || $("#VLC").length) {
+                    return;
+                }
+
+                $("#top-bar").hide();
+                $("#right-nav").hide();
             });
 
             // Keyboard events
@@ -524,7 +534,7 @@
                         break;
                         //backspace
                     case 8:
-                        video.pause().currentTime(0).play();
+                        //video.pause().currentTime(0).play();
                         break;
                         //Space
                     case 32:

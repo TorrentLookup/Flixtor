@@ -136,6 +136,15 @@ var stopPlayer = function (backCount) {
 
 var closeApp = function () {
     stopDownload();
+    var $ = window.$;
+
+    //Disable prompt if VLC because VLC is always in front of every element.
+    if($("#VLC").length) {
+        gui.App.closeAllWindows();
+        return;
+    }
+
+    //Ask the user if he really want to close the app
     utilities.showPrompt("Confirm close","You are about to close the application. Are you sure you want to continue?", "question", function (answer) {
         if(answer) {
             gui.App.closeAllWindows();
@@ -268,22 +277,16 @@ module.exports.getSubManager = getSubManager;
 module.exports.goBack = goBack;
 module.exports.go = go;
 
-/*
 process.on('uncaughtException', function (err) {
-    console.error('An uncaughtException was found, the program will end.');
-
     //Logging with google analytics
     //If internet connection is available we log the error
-    utilities.checkInternetConnection(function (hasInternet) {
+    utilities.hasInternetConnection(function (hasInternet) {
         if (hasInternet) {
             NA.trackEvent('FlixtorApp', 'Error Occured', err.message + " -> " + err.stack, function (err, resp) {});
-            utilities.showMsg('Error', 'An uncaughtException was found and an error report has been sent to improve future versions of Flixtor.<br> The program will end.');
         }
     });
 
-    //Close the application within 6 sec
-    setTimeout(function () {
+    utilities.showPrompt("An uncaughtException was found", "Error: <span class='text-danger'>" + err.message.toString() + "</span><br/>The program will end.", "ok", function(answer) {
         process.exit(1);
-    }, 6000);
+    });
 });
-*/
