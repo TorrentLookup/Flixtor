@@ -23,79 +23,109 @@
             $(document).ready(function() {
                 $("#wrapper").append("<div class='spinner-overlay'></div>");
                 var movieId = utilities.getQueryString('movieId');
-                if(movieId) {
 
-                    //Get movie information
-                    $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers,SimilarMovies", function(data) {
-                        var movie = data.d;
-                        console.log(movie);
-                        //Insert backdrop path
-                        if(movie.BackdropPath) {
-                            $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + movie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
-                        }
+                console.log(movieId);
+                if(movieId.indexOf('magnet:?xt=urn:btih:') == 0) {
+                    var infoHash = movieId.split('magnet:?xt=urn:btih:');
+                    playTorrent(infoHash[1]);
 
-                        $("#title").html(movie.Title);
-                    });
+                    //Reset hover style
+                    $(".source").removeClass("on");
 
-                    //Get movie torrents
-                    $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent,MediaResolution,MediaType&$orderby=Torrent/Seeds%20desc&$top=10&$format=json", function(data) {
-                        if (data.d[0]) {
-                            var torrents = data.d;
-                            console.log(torrents);
-                            for(var i=0; i < torrents.length; i++) {
-                                var torrent = torrents[i].Torrent;
+                    //Set hover style
+                    $(this).addClass("on");
 
-                                var type = "";
-                                if(torrents[i].MediaType) {
-                                    type = torrents[i].MediaType.Name;
-                                }
+                    //Remove video
+                    $('#torrentVideo').remove();
+                    $("#VLC").remove();
 
-                                var vlc = "";
-                                if(torrent.Name.toLowerCase().indexOf("xvid") > -1) {
-                                    vlc = "<span class='glyphicon glyphicon-exclamation-sign font-14 text-warning'></span>&nbsp;&nbsp;VLC";
-                                }
+                    $("#loader").removeClass("hide");
 
-                                var sourceId = (i + 1);
-                                $("#source-content").append("<li><a id='source-" + sourceId + "' class='source' title='" + torrent.Name + "' data-infohash='" + torrent.Info_Hash + "' data-source='" + sourceId + "' '><span>Source " + sourceId + "</span><span class='pull-right'>" + torrent.FormattedSize + "</span><div class='clear-fix'></div><span class='pull-left'>" + vlc + " " + type + "</span><div class='text-right'></span><span class='text-success'>" + torrent.Seeds + "</span> / <span class='text-danger'>" + torrent.Leechs + "</span></div></a></li>");
+                    //Play the actual torrent
+                    infoHash = infoHash[1];
+                    playTorrent(infoHash);
+                    $("#current-source").html("Loading from source");
+
+                    //Start playing first source
+                    $('#source-1').click();
+                    $("#movie").addClass("show");
+                    $(".spinner-overlay").remove();
+
+                }
+                else {
+                    if(movieId) {
+                        //Get movie information
+                        $.getJSON("http://www.torrentlookup.com/Services/v4/Services/MediaServices/MediaDataService.svc/Movies(" + movieId + ")?$format=json&$expand=Genres,Trailers,SimilarMovies", function(data) {
+                            var movie = data.d;
+                            console.log(movie);
+                            //Insert backdrop path
+                            if(movie.BackdropPath) {
+                                $( "<style> body { background: url('http://image.tmdb.org/t/p/w1000" + movie.BackdropPath + "') no-repeat center center fixed; -webkit-background-size: cover; background-size: cover; color: #e9e9e9;}</style>" ).appendTo("#customCSS");
                             }
 
-                            $(".source").click(function () {
-                                //Reset hover style
-                                $(".source").removeClass("on");
+                            $("#title").html(movie.Title);
+                        });
 
-                                //Set hover style
-                                $(this).addClass("on");
-
-                                //Remove video
-                                $('#torrentVideo').remove();
-                                $("#VLC").remove();
-
-                                $("#loader").removeClass("hide");
-
-                                //Play the actual torrent
-                                var infoHash = $(this).data("infohash");
-                                var sourceId = $(this).data("source");
-                                playTorrent(infoHash);
-                                $("#current-source").html("Loading from source " + sourceId);
-
-                                //Get torrent info
+                        //Get movie torrents
+                        $.getJSON("http://torrentlookup.com/Services/v4/Services/TorrentServices/TorrentDataService.svc/GetMovieTorrents?movieId=" + movieId + "&$expand=Torrent,MediaResolution,MediaType&$orderby=Torrent/Seeds%20desc&$top=10&$format=json", function(data) {
+                            if (data.d[0]) {
+                                var torrents = data.d;
+                                console.log(torrents);
                                 for(var i=0; i < torrents.length; i++) {
-                                    if(torrents[i].Torrent.Info_Hash == infoHash) {
-                                        torrent = torrents[i].Torrent;
-                                        break;
-                                    }
-                                }
-                                $("#info-torrent-name").html(torrent.Name);
-                                $("#info-torrent-size").html(torrent.FormattedSize);
-                            });
+                                    var torrent = torrents[i].Torrent;
 
-                            //Start playing first source
-                            $('#source-1').click();
-                            $("#movie").addClass("show");
-                            $(".spinner-overlay").remove();
-                            showSource();
-                        }
-                    });
+                                    var type = "";
+                                    if(torrents[i].MediaType) {
+                                        type = torrents[i].MediaType.Name;
+                                    }
+
+                                    var vlc = "";
+                                    if(torrent.Name.toLowerCase().indexOf("xvid") > -1) {
+                                        vlc = "<span class='glyphicon glyphicon-exclamation-sign font-14 text-warning'></span>&nbsp;&nbsp;VLC";
+                                    }
+
+                                    var sourceId = (i + 1);
+                                    $("#source-content").append("<li><a id='source-" + sourceId + "' class='source' title='" + torrent.Name + "' data-infohash='" + torrent.Info_Hash + "' data-source='" + sourceId + "' '><span>Source " + sourceId + "</span><span class='pull-right'>" + torrent.FormattedSize + "</span><div class='clear-fix'></div><span class='pull-left'>" + vlc + " " + type + "</span><div class='text-right'></span><span class='text-success'>" + torrent.Seeds + "</span> / <span class='text-danger'>" + torrent.Leechs + "</span></div></a></li>");
+                                }
+
+                                $(".source").click(function () {
+                                    //Reset hover style
+                                    $(".source").removeClass("on");
+
+                                    //Set hover style
+                                    $(this).addClass("on");
+
+                                    //Remove video
+                                    $('#torrentVideo').remove();
+                                    $("#VLC").remove();
+
+                                    $("#loader").removeClass("hide");
+
+                                    //Play the actual torrent
+                                    var infoHash = $(this).data("infohash");
+                                    var sourceId = $(this).data("source");
+                                    playTorrent(infoHash);
+                                    $("#current-source").html("Loading from source " + sourceId);
+
+                                    //Get torrent info
+                                    for(var i=0; i < torrents.length; i++) {
+                                        if(torrents[i].Torrent.Info_Hash == infoHash) {
+                                            torrent = torrents[i].Torrent;
+                                            break;
+                                        }
+                                    }
+                                    $("#info-torrent-name").html(torrent.Name);
+                                    $("#info-torrent-size").html(torrent.FormattedSize);
+                                });
+
+                                //Start playing first source
+                                $('#source-1').click();
+                                $("#movie").addClass("show");
+                                $(".spinner-overlay").remove();
+                                showSource();
+                            }
+                        });
+                    }
                 }
 
             });
@@ -122,6 +152,7 @@
                 var minimum = 5242880; //1.5mb
                 var isVideoReady = function () {
                     if (swarm.downloaded > minimum) {
+                        console.log("tdfdfdf");
                         $(".progress-bar").css("width", "100%");
                         $("#progress-bar-count").text("100%");
                         console.log("Ready!");

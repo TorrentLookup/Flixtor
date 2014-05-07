@@ -72,6 +72,9 @@ var Utilities = function () {
         var querystrings = url.split('&');
         for (var i = 0; i < querystrings.length; i++) {
             var keys = querystrings[i].split('=');
+            if(keys[1].indexOf('magnet:?xt') == 0) {
+                return keys[1]+"="+keys[2];
+            }
             if (keys[0] == key) {
                 return keys[1];
             }
