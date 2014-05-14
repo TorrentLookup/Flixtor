@@ -38,11 +38,11 @@ var SubManager = function(port)
         if(sub) {
             if(sub.isDownloaded) {
                 if(sub.data) {
-                    res.end(manager.decode(sub.data, sub.ISO639));
+                    res.end(manager.decode(sub.data, sub.iso639));
                 }
             }else {
                 sub.download(function (data) {
-                    res.end(manager.decode(data, sub.ISO639));
+                    res.end(manager.decode(data, sub.iso639));
                 });
             }
         }
