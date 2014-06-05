@@ -34,9 +34,11 @@
                         $("#title").html(serie.Name);
 
                         var genres = serie.Genres.results;
+                        var genreNames = "";
                         if(genres.length > 0) {
                             for(var i=0; i < genres.length; i++) {
                                 $("#genres").append(genres[i].Name);
+                                genreNames +=' '+genres[i].Name;
 
                                 if(i < (genres.length - 1)) {
                                     $("#genres").append(", ");
@@ -90,6 +92,20 @@
                             $("#inProduction").html("This serie is not in production.");
                         }
 
+                        $(document).on('click', '#btnAddFav', function () {
+                            var poster = 'http://image.tmdb.org/t/p/w300' + serie.PosterPath;
+                            var data =  {"type":'serie', "id":serieId, "title": serie.Name, "poster": poster, "genres": genreNames };
+                            main.storeSettings( 'Favorites', data );
+                            $( ".fav" ).attr('id', 'btnRemoveFav').html( '<i class="glyphicon glyphicon-star"></i>&nbsp;&nbsp;Remove from Favorites' );
+                        });
+
+                        $(document).on('click', '#btnRemoveFav', function () {
+                            main.removeFavorite('serie', serieId);
+                            $( ".fav" ).attr('id', 'btnAddFav').html( '<i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;Add to Favorites' );
+                        });
+
+                        checkForFavorite(serieId);
+
                         $("#rating").attr("style", "width:" + (serie.VoteAverage * 10) + "% !important");
 
                         $("#btnEpisodeList").click(function () {
@@ -105,6 +121,23 @@
                     });
                 }
             });
+
+            function checkForFavorite(serieId) {
+                var isFav = false;
+                var response = main.loadSettings( 'Favorites' );
+                for(var i in response) {
+                    if( response[i].type === 'serie' && response[i].id === serieId ) {
+                        isFav = true;
+                    }
+                }
+                if( isFav === true ) {
+                    $( ".fav" ).attr('id', 'btnRemoveFav').html( '<i class="glyphicon glyphicon-star"></i>&nbsp;&nbsp;Remove from Favorites' );
+                }
+                else {
+                    $( ".fav" ).attr('id', 'btnAddFav').html( '<i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;Add to Favorites' );
+                }
+            }
+
         </script>
     </head>
 
@@ -149,11 +182,12 @@
                                     <div id="network">This serie is aired on </div>
                                     <div class="ptb-10">
                                         <button id="btnEpisodeList" class="btn btn-primary btn-sm"><i class='glyphicon glyphicon-list'></i>&nbsp;&nbsp;Episode list</button>
+                                        <button id="" class="btn btn-success btn-sm fav"></button>
                                     </div>
                                     <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>
                                     <div id="date" class="pt-5"><span class="glyphicon glyphicon-calendar"></span>&nbsp;&nbsp;</div>
                                     <div id="info" class="pt-5"><span class="glyphicon glyphicon-info-sign"></span>&nbsp;&nbsp;</div>
-                                    <h4>Casts</h3>
+                                    <h4>Casts</h4>
                                     <div id="casts"></div>
                                 </div>
                             </div>

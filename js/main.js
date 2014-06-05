@@ -10,6 +10,7 @@ var requestManager = require('request');
 var path = require('path');
 var NA = require('nodealytics');
 var os = require('os');
+var nconf = require('nconf');
 
 //Internal modules
 var subtitle = require('../js/subtitle.js');
@@ -227,6 +228,65 @@ function saveHistory(url)
     window.sessionStorage.history = JSON.stringify(historyList);
 }
 
+// Load Favorites from config
+function loadSettings( section ) {
+    nconf.use('file', { file: './config.json' });
+    nconf.load();
+
+    var conf = nconf.get(section);
+
+    return conf;
+}
+
+// Store Favorites from config
+function storeSettings( section, settings ) {
+    nconf.use('file', { file: './config.json' });
+    nconf.load();
+
+    var conf = nconf.get(section);
+    if( conf !== undefined ) {
+        conf.push(settings);
+    }
+    else {
+        var conf = [];
+        conf.push(settings);
+    }
+
+    nconf.set(''+section+'', conf);
+
+    console.log(nconf.get(section));
+
+    nconf.save(function (err) {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+    });
+}
+
+// Remove Favorite
+function removeFavorite(type, id) {
+    nconf.use('file', { file: './config.json' });
+    nconf.load();
+
+    var conf = nconf.get('Favorites');
+
+    for(var i in conf) {
+        if( conf[i].type == type && conf[i].id == id ) {
+            //delete conf[i];
+            conf.splice(i, 1);
+        }
+
+    }
+
+    nconf.save(function (err) {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+    });
+}
+
 //Disable file drop over
 window.addEventListener("dragover", function (e) {
     e = e || event;
@@ -278,6 +338,9 @@ module.exports.getEngine = getEngine;
 module.exports.getSubManager = getSubManager;
 module.exports.goBack = goBack;
 module.exports.go = go;
+module.exports.storeSettings = storeSettings;
+module.exports.loadSettings = loadSettings;
+module.exports.removeFavorite = removeFavorite;
 
 process.on('uncaughtException', function (err) {
     //Logging with google analytics

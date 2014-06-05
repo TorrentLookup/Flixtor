@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flixtor</title>
+    <!-- CSS -->
+    <link href="../styles/bootstrap.min.css" rel="stylesheet">
+    <link href="../styles/bootly.css" rel="stylesheet">
+
+    <!-- Scripts -->
+    <script type='text/javascript' src="../js/extensions/jquery.min.js"></script>
+    <script type='text/javascript' src="../js/extensions/bootstrap.min.js"></script>
+    <script src="../js/extensions/jquery.isotope.min.js"></script>
+
+    <!-- Modules -->
+    <script>
+        var main = require('../js/main.js');
+        var callwcf = require('../js/callwcf.js');
+
+        $(document).ready(function() {
+            //Scroll bar
+            $(window).resize(function() {
+                $("#movieContainer").css('max-height', ($(window).height() - 95) + "px");
+            }).trigger("resize");
+
+            applySearch();
+
+            //Persistence
+            if(sessionStorage.movie) {
+                var movie = $.parseJSON(sessionStorage.movie);
+                //showDetails(movie.MovieId);
+            }
+
+        });
+    </script>
+
+    <!-- Custom page style -->
+    <style>
+        body {
+            background-color: #141414;
+        }
+        .shadow {
+            display: block;
+            position: relative;
+        }
+        .shadow img {
+            display: block;
+        }
+        .shadow:hover::before {
+            box-shadow: none;
+        }
+        .shadow::before {
+            display: block;
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 100%;
+            box-shadow: inset 0px 0px 50px 1px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+<div id="wrapper">
+<div id="top-bar">
+    <div type="button" class="top-titlebar-back-button" title="Go back" onclick="main.goBack();">
+        <span class="glyphicon glyphicon-share-alt"></span>
+    </div>
+    <div type="button" class="top-titlebar-minimize-button" title="Minimize" onclick="main.minimize();">
+        <span class="glyphicon glyphicon-minus"></span>
+    </div>
+    <div type="button" class="top-titlebar-fullscreen-button" title="Toggle fullscreen" onclick="main.toggleFullScreen();">
+        <span class="glyphicon glyphicon-fullscreen"></span>
+    </div>
+    <div class="top-titlebar-close-button" onclick="main.closeApp();" title="Close Flixtor">
+        <span class="glyphicon glyphicon-remove"></span>
+    </div>
+    <div class="top-titlebar-text">Flixtor</div>
+</div>
+<div id="content-wrapper">
+<div id="side-bar-full" class="hidden-xs side-bar">
+    <ul>
+        <li id="side-bar-li-movies" class="on" onclick="main.changeFrame('movies')">
+            <a href="#">
+                <span class="glyphicon glyphicon-film"></span>&nbsp;&nbsp;Movies</a>
+        </li>
+        <li id="side-bar-li-series" onclick="main.changeFrame('series')">
+            <a href="#">
+                <span class="glyphicon glyphicon-expand"></span>&nbsp;&nbsp;Series</a>
+        </li>
+        <li id="side-bar-li-torrents" onclick="main.changeFrame('torrents')">
+            <a href="#">
+                <span class="glyphicon glyphicon-th-list"></span>&nbsp;&nbsp;Torrents</a>
+        </li>
+        <li id="side-bar-li-favorites" onclick="main.changeFrame('favorites')">
+            <a href="#">
+                <span class="glyphicon glyphicon-star"></span>&nbsp;&nbsp;Favorites</a>
+        </li>
+    </ul>
+
+</div>
+<div id="side-bar-small" class="visible-xs side-bar">
+    <ul>
+        <li id="side-bar-li-movies-sm" class="on" onclick="main.changeFrame('movies')">
+            <a href="#">
+                <span class="glyphicon glyphicon-film"></span>
+            </a>
+        </li>
+        <li id="side-bar-li-series-sm" onclick="main.changeFrame('series')">
+            <a href="#">
+                <span class="glyphicon glyphicon-expand"></span>
+            </a>
+        </li>
+        <li id="side-bar-li-torrents-sm" onclick="main.changeFrame('torrents')">
+            <a href="#">
+                <span class="glyphicon glyphicon-th-list"></span>
+            </a>
+        </li>
+        <li id="side-bar-li-favorites-sm" onclick="main.changeFrame('favorites')">
+            <a href="#">
+                <span class="glyphicon glyphicon-star"></span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="content">
+    <script type="text/javascript">
+        var movieFilter = {};
+
+        function applySearch() {
+            //Display the spinner while we wait for the data.
+            $("#wrapper").append("<div class='spinner-overlay'></div>");
+
+            var response = main.loadSettings( 'Favorites' );
+
+            var content = "";
+            if( response !== undefined ) {
+                for(var i in response) {
+                    //Search for movie
+                    if( response[i].type === 'movie' ) {
+                        content += "<div class='element transition m-10 isotope-item'>" +
+                                    "<a class='shadow' onClick='showMovieDetails(" + response[i].id + ");'>" +
+                                    "<img alt='image' src='http://image.tmdb.org/t/p/w185" + response[i].poster + "/>' style='width:160px; height:230px;'>" +
+                                    "</a>" +
+                                    "<div class='p-5' style='max-width:160px;'>" +
+                                    "<div style='font-size:14px;'>" + response[i].title + "</div>" +
+                                    "<div style='font-size:10px; color:#A8A8A8;'>" + response[i].genres + "</div>" +
+                                    "</div>" +
+                                    "<div style='clear:both'></div>" +
+                                    "</div>";
+                    }
+                    //Search for serie
+                    else if( response[i].type === 'serie' ) {
+                        var posterPath = ""
+                        if (response[i].poster == "") {
+                            posterPath = "../images/no-poster.png";
+                        } else {
+                            posterPath = "http://image.tmdb.org/t/p/w185" + response[i].poster;
+                        }
+
+                        content += "<div class='element transition m-10 isotope-item'>" +
+                                "<a class='shadow' onClick='showSerieDetails(" + response[i].id + ");'>" +
+                                "<img alt='image' src='" + posterPath + "' style='width:160px; height:230px;'/>" +
+                                "</a>" +
+                                "<div class='p-5' style='max-width:160px;'>" +
+                                "<div style='font-size:14px;'>" + response[i].title + "</div>" +
+                                "<div style='font-size:10px; color:#E8E8E8;'>" + response[i].genres + "</div>" +
+                                "</div>" +
+                                "<div style='clear:both'></div>" +
+                                "</div>";
+                    }
+                }
+            }
+
+            $('.spinner-overlay').remove();
+            $('#movieContainer').empty();
+
+            if (content !== "") {
+                $('#movieContainer').append(content);
+                var $container = $('#movieContainer');
+                $container.isotope('destroy');
+                $container.isotope({
+                    itemSelector: '.element',
+                    animationEngine: 'jquery',
+                    layoutMode: 'fitRows',
+                    animationOptions: {
+                        duration: 600,
+                        easing: 'linear',
+                        queue: false
+                    }
+                });
+            } else {
+                content = "<span class='p-10 ml-20 font-24' style='color:#D5D5D5;'>No favorites found</span>";
+                $('#movieContainer').append(content);
+            }
+        }
+
+        function showMovieDetails(movieId) {
+            main.go("movie.html?movieId=" + movieId);
+        }
+
+        function showSerieDetails(serieId) {
+            main.go("serie.html?serieId=" + serieId);
+        }
+
+        function closeMovie()
+        {
+            $('#divMD').addClass('hide');
+            sessionStorage.removeItem('movie');
+        }
+    </script>
+    <div id="movies">
+        <div class="p-10">
+        </div>
+        <div id="movieContainer" class="isotope" style="overflow-y:auto !important; margin-right:10px;">
+            <!-- Dynamic content here-->
+        </div>
+    </div>
+    <div id="popup"></div>
+</div>
+</div>
+</div>
+</body>
+
+</html>
