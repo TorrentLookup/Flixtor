@@ -26,7 +26,9 @@
         "peerflix": "~0.8.6",
         "request": "~2.34.0",
         "subsync": "~0.0.1",
-        "wcf.js": "~0.0.6"
+        "wcf.js": "~0.0.6",
+        "jschardet": "~1.1.0",
+        "iconv-lite": "~0.2.11"
     },
     "devDependencies": {},
     "scripts": {
