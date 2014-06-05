@@ -34,9 +34,11 @@
                         $("#title").html(movie.Title);
 
                         var genres = movie.Genres.results;
+                        var genreNames = "";
                         for(var i=0; i < genres.length; i++) {
                             $("#genres").append(genres[i].Name);
 
+                            genreNames +=' '+genres[i].Name;
                             if(i < (genres.length - 1)) {
                                 $("#genres").append(", ");
                             }
@@ -54,6 +56,21 @@
                         $("#btnPlay").click(function () {
                             main.go("players/movie-player.html?movieId=" + movieId);
                         });
+
+                        $(document).on('click', '#btnAddFav', function () {
+                            var poster = 'http://image.tmdb.org/t/p/w300' + movie.PosterPath;
+                            var data =  {"type": 'movie', "id": movieId, "title": movie.Title, "poster": poster, "genres": genreNames };
+
+                            main.storeSettings( 'Favorites', data );
+                            $( ".fav" ).attr('id', 'btnRemoveFav').html( '<i class="glyphicon glyphicon-star"></i>&nbsp;&nbsp;Remove from Favorites' );
+                        });
+
+                        $(document).on('click', '#btnRemoveFav', function () {
+                            main.removeFavorite('movie', movieId);
+                            $( ".fav" ).attr('id', 'btnAddFav').html( '<i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;Add to Favorites' );
+                        });
+
+                        checkForFavorite(movieId);
 
                         $("#rating").attr("style", "width:" + (movie.VoteAverage * 10) + "% !important");
 
@@ -81,6 +98,23 @@
                     });
                 }
             });
+
+            function checkForFavorite(movieId) {
+                var isFav = false;
+                var response = main.loadSettings( 'Favorites' );
+                for(var i in response) {
+                    if( response[i].type === 'movie' && response[i].id === movieId ) {
+                        isFav = true;
+                    }
+                }
+                if( isFav === true ) {
+                    $( ".fav" ).attr('id', 'btnRemoveFav').html( '<i class="glyphicon glyphicon-star"></i>&nbsp;&nbsp;Remove from Favorites' );
+                }
+                else {
+                    $( ".fav" ).attr('id', 'btnAddFav').html( '<i class="glyphicon glyphicon-star-empty"></i>&nbsp;&nbsp;Add to Favorites' );
+                }
+            }
+
         </script>
     </head>
 
@@ -120,10 +154,11 @@
                                     <div class="ptb-10">
                                         <button id="btnPlay" class="btn btn-success btn-sm"><i class='glyphicon glyphicon-play'></i>&nbsp;&nbsp;Play</button>
                                         <button id="btnTrailer" class="btn btn-primary btn-sm"><i class='glyphicon glyphicon-film'></i>&nbsp;&nbsp;Trailer</button>
+                                        <button id="" class="btn btn-success btn-sm fav"></button>
                                     </div>
                                     <div id="runtime" class="pt-5"><span class="glyphicon glyphicon-time"></span>&nbsp;&nbsp;</div>
                                     <div id="date" class="pt-5"><span class="glyphicon glyphicon-calendar"></span>&nbsp;&nbsp;</div>
-                                    <h4>Similar movies</h3>
+                                    <h4>Similar movies</h4>
                                     <div id="similarMovies"></div>
                                 </div>
                             </div>

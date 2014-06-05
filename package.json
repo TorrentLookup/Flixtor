@@ -6,7 +6,7 @@
     "window": {
         "title": "Flixtor",
         "icon": "images/flixtor-ico.png",
-        "toolbar": true,
+        "toolbar": false,
         "frame": false,
         "width": 1280,
         "height": 770,
@@ -26,7 +26,8 @@
         "peerflix": "~0.8.6",
         "request": "~2.34.0",
         "subsync": "~0.0.1",
-        "wcf.js": "~0.0.6"
+        "wcf.js": "~0.0.6",
+        "nconf": "~0.6.9"
     },
     "devDependencies": {},
     "scripts": {
